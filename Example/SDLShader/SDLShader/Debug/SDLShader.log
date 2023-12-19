@@ -1,0 +1,3 @@
+﻿  main.cpp
+c:\users\vulcain\desktop\tuto\sdl\sdlshader\sdlshader\main.cpp(13): warning C4244: 'argument' : conversion de 'float' en 'Uint16', perte possible de données
+  SDLShader.vcxproj -> C:\Users\vulcain\Desktop\tuto\sdl\SDLShader\Debug\SDLShader.exe
