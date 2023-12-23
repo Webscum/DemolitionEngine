@@ -1,0 +1,12 @@
+Demolition Engine is a text based game engine
+Here are commands that you can use and what they do
+
+Commands are listed in this form
+<Name>, <Description>
+Arguments - <Arguments to be used>
+
+HELP, Output this text
+Arguments - None
+
+SELECT - Select object(s) with distinctifiers
+Arguments - 

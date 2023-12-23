@@ -1,0 +1,5 @@
+- Make the code more modular and clear
+- 
+- Functionality for spawning in objects through drop down menu
+- Functionality for adjusting the objects position and attributes
+- Implementation of simple physics and collision

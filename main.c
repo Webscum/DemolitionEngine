@@ -5,7 +5,9 @@
 #include "headers/Demolition_Engine.h"
 
 int main(int argc, char* argv[]){
+	
 	Demolish();
+	
 	char* inputFile = argc > 3 ? argv[1] : NULL;
 	if(!(inputFile)){
 		printf("Not enough arguments!\n");
@@ -26,7 +28,7 @@ int main(int argc, char* argv[]){
 
 	Uint32 render_flags = SDL_RENDERER_ACCELERATED;
 
-	SDL_Renderer* engineRenderer = SDL_CreateRenderer(win, 1, render_flags);
+	SDL_Renderer* engineRenderer = SDL_CreateRenderer(engineWindow, 1, render_flags);
 	//SDL_SetRenderDrawColor(rend, 255, 255, 255, 0);
 	
 	bool exiting = false;	

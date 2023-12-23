@@ -1,5 +1,5 @@
 #ifndef CVECTOR_H
-#def CVECTOR_H
+#define CVECTOR_H
 
 #include <stdio.h>
 #include <stdlib.h>

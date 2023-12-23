@@ -1,4 +1,4 @@
- pla#ifndef DEMOLITION_ENGINE_H
+#ifndef DEMOLITION_ENGINE_H
 #define DEMOLITION_ENGINE_H
 #include "CVector.h"
 #include <SDL.h>
@@ -6,16 +6,16 @@
 
 int n = 100;
 
-typedef struct spaceObject;
+struct spaceObject;
+struct clickable;
 
 typedef struct{
-	SDL_Texture tex;
+	SDL_Texture* tex;
 	char* image;
 } textureObjAttr;
 
 typedef struct{
-	SDL_Rect* area;
-	int layer;
+	clickable* area;
 }renderSurface;
 
 typedef struct{
@@ -28,18 +28,19 @@ typedef struct{
 	void* renderer;
 }demolitionRenderer;
 
-struct {
+typedef struct {
 	float x;
 	float y;
+	float z;
 	vector attributes;
 } spaceObject;
 
 void initSpaceObject(spaceObject* spcObj){
-	vector_init(&spc.Obj->attributes)
+	vector_init(&spcObj->attributes);
 }
 
-void addAttribute(spaceObject* sObj, objectAttribute* attribute){
-	sObj->attributes.pushBack(&sObj->attributes, attribute)
+void addAttribute(spaceObject* sObj, void* attribute){
+	sObj->attributes.pfVectorAdd(&sObj->attributes, attribute);
 }
 
 void Demolish(){
@@ -48,7 +49,6 @@ void Demolish(){
 	printf("%d, Demolition Engine Working!\n", n);
 }
 
-#include "Demolition_Console.h"
 #include "Demolition_UI.h"
 #include "Demolition_Visual.h"
 #endif

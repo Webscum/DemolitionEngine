@@ -5,7 +5,7 @@
 
 typedef struct{
 	SDL_Rect dimensions;
-	void (*onClick) ();
+	void (*onClick) (spaceObject*);
 } clickable;
 
 // check if the given x and y are in the rect

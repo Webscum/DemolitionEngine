@@ -1,8 +1,8 @@
 // Inside of this header is the functionality of the Demolition Engine Console, aka. the IO of commands
+// Left to rot for now
 
 typedef struct{
 	char* name;
-	char* description;
 	vector arguments;
 } command;
 
@@ -19,6 +19,7 @@ char* doCommand(command* cmd){
 }
 
 command* constuctCommand(char* givenCommand){
+	
 	command* output;
 }
 
