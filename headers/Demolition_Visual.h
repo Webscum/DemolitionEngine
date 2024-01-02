@@ -6,8 +6,8 @@
 
 SDL_Color colors[] = {{0, 255, 246, 255}, {0, 231, 255, 255}, {0, 158, 255, 255}, {0, 20, 255, 255}};
 
-void renderObjects(){
-
+void renderObject(spaceObject* obj){
+	SDL_RenderCopy(engineRenderer, obj->attributes)
 }
 
 #endif

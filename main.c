@@ -33,9 +33,7 @@ int main(int argc, char* argv[]){
 	
 	bool exiting = false;	
 	float UpdateFreq  = 1000 / 60;
-	spaceObject Button = {{100, 100, 500, 500}};
-	vector objArray;
-	vector_init(&objArray);
+	spaceObject Button = {0,0,0};
 	
 	
 	while(!exiting){
@@ -52,6 +50,8 @@ int main(int argc, char* argv[]){
 			}
 		}
 		SDL_RenderClear(engineRenderer);
+		// Handle Rendering Here
+		for(int rendIter = 0; objectSpace.total)
 		SDL_RenderPresent(engineRenderer);
 		SDL_Delay(UpdateFreq);
 	}
