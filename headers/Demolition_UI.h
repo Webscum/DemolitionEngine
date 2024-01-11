@@ -3,10 +3,23 @@
 #include <SDL.h>
 #include <stdbool.h>
 
-typedef struct{
-	SDL_Rect dimensions;
-	void (*onClick) (spaceObject*);
-} clickable;
+
+typedef enum demolition_screen_section_enum{
+	DEMOLITION_SCENE,
+	DEMOLITION_LOG,
+	DEMOLITION_INTERFACE
+}demolition_screen_section_enum;
+
+typedef struct demoliton_screen_section{
+	demolition_screen_section_enum* type;
+	SDL_Rect size;
+	int cornerX, cornerY;
+}demolition_screen_section;
+
+typedef struct demolition_button{
+	clickable c;
+	texAttr t;
+}demolition_button;
 
 // check if the given x and y are in the rect
 bool isInRect(SDL_Rect* rect, int x, int y){

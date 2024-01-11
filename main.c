@@ -2,18 +2,18 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <stdbool.h>
+#include <time.h>
 #include "headers/Demolition_Engine.h"
 
 int main(int argc, char* argv[]){
 	
-	Demolish();
-	
-	char* inputFile = argc > 3 ? argv[1] : NULL;
+	char* inputFile = argc > 4 ? argv[1] : NULL;
 	if(!(inputFile)){
 		printf("Not enough arguments!\n");
 		return 1;
 	}
-
+	Demolish(atoi(argv[2]), atoi(argv[3]));
+	
 	FILE* file = fopen(inputFile, "r+");
 
 	if (!file){
@@ -24,19 +24,21 @@ int main(int argc, char* argv[]){
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		printf("error initializing SDL: %s\n", SDL_GetError());
 	}
-	SDL_Window* engineWindow = SDL_CreateWindow("GAME", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, atoi(argv[2]), atoi(argv[3]), 0);
-
-	Uint32 render_flags = SDL_RENDERER_ACCELERATED;
-
-	SDL_Renderer* engineRenderer = SDL_CreateRenderer(engineWindow, 1, render_flags);
 	//SDL_SetRenderDrawColor(rend, 255, 255, 255, 0);
 	
 	bool exiting = false;	
-	float UpdateFreq  = 1000 / 60;
-	spaceObject Button = {0,0,0};
+	float UpdateFreq  =  1000 / (atoi(argv[4]));
+	time_t begin;
 	
+	demolition_button objectCreateButton = {
+		{{100, 20}, makeObject},
+		{defaultTexture, DEMOLITION_DEFAULT_TEXTURE}
+	};
+	
+	queryButtonTex(&objectCreateButton);
 	
 	while(!exiting){
+		time(&begin);
 		bool attributes = false;
 		SDL_Event event;
 
@@ -46,14 +48,19 @@ int main(int argc, char* argv[]){
 				exiting = 1;
 				break;
 			case SDL_MOUSEBUTTONDOWN:
+					printf("%d\n", clicked(&objectCreateButton.c, &event.button, engineWindow));
 				break;
 			}
 		}
 		SDL_RenderClear(engineRenderer);
 		// Handle Rendering Here
-		for(int rendIter = 0; objectSpace.total)
+		//for(int rendIter = 0; objectSpace.total)
+		RenderButton(&objectCreateButton);
+		
 		SDL_RenderPresent(engineRenderer);
 		SDL_Delay(UpdateFreq);
+		trackfps(begin);
+		
 	}
 	
 	//SDL_DestroyRenderer(rend);
