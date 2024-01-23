@@ -5,6 +5,7 @@
 // Create palette to use in coloring the UI
 
 SDL_Color colors[] = {{0, 255, 246, 255}, {0, 231, 255, 255}, {0, 158, 255, 255}, {0, 20, 255, 255}};
+SDL_Color BackgroundColor = {0,200,30,255}; 
 
 typedef struct objectAttribute;
 
@@ -18,6 +19,8 @@ void initTex(SDL_Texture* texAddr, SDL_Rect* dest,char* fileLocation){
 
 void queryButtonTex(demolition_button* butt){
 	SDL_QueryTexture(butt->t.tex, NULL, NULL, &butt->c.dimensions.w, &butt->c.dimensions.h);
+	butt->c.dimensions.w /= 2;
+	butt->c.dimensions.h /= 2;
 }
 
 void RenderButton(demolition_button* item){

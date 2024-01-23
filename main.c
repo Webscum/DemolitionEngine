@@ -15,7 +15,8 @@ int main(int argc, char* argv[]){
 	Demolish(atoi(argv[2]), atoi(argv[3]));
 	
 	FILE* file = fopen(inputFile, "r+");
-
+	
+	
 	if (!file){
 		perror ("Error opening file");
 		return 1;
@@ -29,6 +30,8 @@ int main(int argc, char* argv[]){
 	bool exiting = false;	
 	float UpdateFreq  =  1000 / (atoi(argv[4]));
 	time_t begin;
+	
+	
 	
 	demolition_button objectCreateButton = {
 		{{100, 20}, makeObject},
@@ -48,26 +51,33 @@ int main(int argc, char* argv[]){
 				exiting = 1;
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-					printf("%d\n", clicked(&objectCreateButton.c, &event.button, engineWindow));
+				printf("%d\n", clicked(&objectCreateButton.c, &event.button, engineWindow));
+				spaceObject* res = (spaceObject*) objectCreateButton.c.onMouse1();
+				addAttribute(res, "RenderSurface");
 				break;
 			}
 		}
 		SDL_RenderClear(engineRenderer);
-		// Handle Rendering Here
-		//for(int rendIter = 0; objectSpace.total)
-		RenderButton(&objectCreateButton);
 		
+		// Handle Rendering Here
+		for(int rendIter = 0; vectorTotal(&objectSpace) > rendIter; rendIter++){
+			
+		}
+		
+		RenderButton(&objectCreateButton);
+		RenderDemolitionUI();
 		SDL_RenderPresent(engineRenderer);
 		SDL_Delay(UpdateFreq);
 		trackfps(begin);
 		
 	}
 	
+	
 	//SDL_DestroyRenderer(rend);
 	SDL_DestroyRenderer(engineRenderer);
 	SDL_DestroyWindow(engineWindow);
 	
 	SDL_Quit();
-
 	
 }
+

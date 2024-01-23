@@ -11,15 +11,30 @@ typedef enum demolition_screen_section_enum{
 }demolition_screen_section_enum;
 
 typedef struct demoliton_screen_section{
-	demolition_screen_section_enum* type;
+	demolition_screen_section_enum type;
 	SDL_Rect size;
-	int cornerX, cornerY;
 }demolition_screen_section;
 
 typedef struct demolition_button{
 	clickable c;
 	texAttr t;
 }demolition_button;
+
+demolition_screen_section demolitionLog, demolitionInterface;
+
+SDL_Color colors[];
+SDL_Color BackgroundColor;
+
+// Render the UI
+void RenderDemolitionUI(){
+	SDL_SetRenderDrawColor(engineRenderer, colors[0].r, colors[0].g, colors[0].b, colors[0].a);
+	SDL_RenderFillRect(engineRenderer, &demolitionInterface.size);
+    SDL_RenderDrawRect(engineRenderer, &demolitionInterface.size);
+	SDL_SetRenderDrawColor(engineRenderer, colors[1].r, colors[1].g, colors[1].b, colors[1].a);
+	SDL_RenderFillRect(engineRenderer, &demolitionLog.size);
+    SDL_RenderDrawRect(engineRenderer, &demolitionLog.size);
+	SDL_SetRenderDrawColor(engineRenderer, BackgroundColor.r, BackgroundColor.g, BackgroundColor.b, BackgroundColor.a);
+}
 
 // check if the given x and y are in the rect
 bool isInRect(SDL_Rect* rect, int x, int y){
