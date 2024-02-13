@@ -4,4 +4,5 @@
  
  Currently making the framework for the editor to be built on.
 
-Markus Linnanen/Count-X/Webscum 2023-2024
+Markus Linnanen/Count-X/Webscum 2023-2024,
+Please contact for use, not required but preffered
