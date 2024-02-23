@@ -2,16 +2,16 @@
 #define DEMOLITION_ENGINE_UI_H
 #include <SDL.h>
 #include <stdbool.h>
-
+#include <stdio.h>
 
 typedef enum demolition_screen_section_enum{
 	DEMOLITION_SCENE,
 	DEMOLITION_LOG,
 	DEMOLITION_INTERFACE
-}demolition_screen_section_enum;
+}demolition_screen_section_type;
 
 typedef struct demoliton_screen_section{
-	demolition_screen_section_enum type;
+	demolition_screen_section_type type;
 	SDL_Rect size;
 }demolition_screen_section;
 
@@ -46,9 +46,12 @@ int clicked(clickable* obj, SDL_MouseButtonEvent* but, SDL_Window* win){
 	but->windowID = SDL_GetWindowID(win);
 	if(isInRect(&obj->dimensions, but->x, but->y)){
 		switch(but->button){
-			case SDL_BUTTON_LEFT:
+			case SDL_BUTTON_LEFT:{
+				void* ret = obj->onMouse1();
+				printf("%p", ret);
 				return 1;
 				break;
+			}
 			case SDL_BUTTON_RIGHT:
 				return 2;
 				break;

@@ -1,5 +1,6 @@
 #ifndef DEMOLITION_ENGINE_VISUAL_H
 #define DEMOLITION_ENGINE_VISUAL_H
+#include "Demolition_Engine.h"
 #include <SDL.h>
 #include <SDL_image.h>
 // Create palette to use in coloring the UI
@@ -28,8 +29,8 @@ void RenderButton(demolition_button* item){
 }
 
 void renderObject(spaceObject* obj){
-	objectAttribute* rendSurface = getObjectAttribute(obj, "RenderSurface");
-	objectAttribute* objTexture = getObjectAttribute(obj, "Texture");
+	objectAttribute* rendSurface = getObjectAttribute(obj, RENDER_SURFACE_ATTRIBUTE);
+	objectAttribute* objTexture = getObjectAttribute(obj, TEXTURE_ATTRIBUTE);
 	
 	if (rendSurface){ 
 		SDL_Rect* texDest = &(((renderSurface*)rendSurface->attribute)->area.dimensions);
