@@ -3,7 +3,6 @@
  
  Currently programming extensibilty funtionality into the engine
 
+![Logo of Demolition Engine](https://github.com/Webscum/DemolitionEngine/blob/main/Resources/AppIcon.png)
 Markus Linnanen/Count-X/Webscum 2023-2024,
 Please contact for further information
-
-![Logo of Demolition Engine](https://github.com/Webscum/DemolitionEngine/blob/main/Resources/AppIcon.png)
