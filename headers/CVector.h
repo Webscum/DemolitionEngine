@@ -87,7 +87,7 @@ int vectorSet(vector *v, int index, void *item)
     }
     return status;
 }
-void *vectorGet(vector *v, int index)
+void* vectorGet(vector *v, int index)
 {
     void *readData = NULL;
     if(v)
