@@ -42,6 +42,21 @@ void RenderScene(){
 	}
 	return;
 }
+
+void trackfps(int begin) {
+	static int counter;
+
+	counter++;
+	if(counter >= framerate){
+		int n = (SDL_GetTicks64() - begin);
+		float t = n / 1000.0;
+
+		printf("%.2f\n", 1/t);
+		counter = 0;
+	}
+	return;
+}
+
 #endif
 
 #ifdef DEMOLITION_ENGINE_UI_H

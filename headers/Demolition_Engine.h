@@ -77,7 +77,7 @@ typedef struct{
 
 typedef struct{
 	demolition_objAttrType attributeType;
-	int8_t typeID;
+	uint8_t typeID;
 	void* attribute;
 	uint16_t bitFlag;
 	//Dumb to have an attribute have an attribute inside it
@@ -87,7 +87,7 @@ typedef struct{
 
 typedef struct object_Attribute_Type_ID{
 	uint8_t ID;
-	void* (*addFunc) (spaceObject* sObj, int8_t type);
+	void* (*addFunc) (spaceObject* sObj, uint8_t type);
 	void (*freeFunc) (objectAttribute* attrObj);
 } objAttrTypeID;
 
@@ -98,7 +98,7 @@ void* defaultClick(){
 	return NULL;
 }
 
-int createObjAttribute(void* (*addFunc) (spaceObject* sObj, int8_t type), void (*freeFunc) (objectAttribute* attrObj)){
+int createObjAttribute(void* (*addFunc) (spaceObject* sObj, uint8_t type), void (*freeFunc) (objectAttribute* attrObj)){
 	static uint8_t attributeAmount;
 
 	if(attributeAmount >= 255){
@@ -112,21 +112,21 @@ int createObjAttribute(void* (*addFunc) (spaceObject* sObj, int8_t type), void (
 	return attributeAmount - 1;
 }
 
-objectAttribute* getObjectAttribute(spaceObject* obj, demolition_objAttrType typeName){
+objectAttribute* getObjectAttribute(spaceObject* obj, uint8_t type){
 	for(int i = 0; vectorTotal(&obj->attributes) > i; i++){
 		objectAttribute* objAttr = (objectAttribute*) vectorGet(&obj->attributes, i);
-		if(objAttr->attributeType == typeName) return objAttr;
+		if(objAttr->typeID == type) return objAttr;
 	}
 	return NULL;
 }
 
-objectAttribute* getObjectAttributeFromObjectSpace(int indexOfObject, demolition_objAttrType objectAttributeType){
-	return getObjectAttribute((spaceObject*) vectorGet(&objectSpace, indexOfObject), objectAttributeType);
+objectAttribute* getObjectAttributeFromObjectSpace(int indexOfObject, uint8_t type){
+	return getObjectAttribute((spaceObject*) vectorGet(&objectSpace, indexOfObject), type);
 }
 
 // Here are the add and free functions for the general attributes,the attribute definitions are in the demolish() function
 
-void* addTexture(spaceObject* sObj, int8_t type){
+void* addTexture(spaceObject* sObj, uint8_t type){
 	objectAttribute* attr; 
 	texAttr* tAttr;
 
@@ -141,16 +141,20 @@ void* addTexture(spaceObject* sObj, int8_t type){
 	vectorPushBack(&sObj->attributes, attr);
 
 	printf("Texture Added!\n");
+
+	return (void*) tAttr;
 }
 
+void* addObjectAttribute(spaceObject *sObj, uint8_t type);
+
 void freeTexture(objectAttribute* objAttr){
-	texAttr* realAttribute = (texAttr*)objAttr->attribute;
-	if (strcmp(realAttribute->textureLocation, DEMOLITION_DEFAULT_TEXTURE) and strcmp(realAttribute->textureLocation, DEMOLITION_MISSING_TEXTURE)) SDL_DestroyTexture(realAttribute->tex);
+	texAttr* realAttribute = (texAttr*) objAttr->attribute;
+	if (strcmp(realAttribute->textureLocation, DEMOLITION_DEFAULT_TEXTURE) && strcmp(realAttribute->textureLocation, DEMOLITION_MISSING_TEXTURE)) SDL_DestroyTexture(realAttribute->tex);
 	free(realAttribute);
 	free(objAttr->attribute);
 }
 
-void* addSurface(spaceObject* sObj, int8_t type){
+void* addSurface(spaceObject* sObj, uint8_t type){
 	objectAttribute* attr;
 	renderSurface* rSurf;
 
@@ -162,10 +166,12 @@ void* addSurface(spaceObject* sObj, int8_t type){
 	attr->typeID = type;
 	attr->attribute = rSurf;
 
-	if(!getObjectAttribute(sObj, TEXTURE_ATTRIBUTE)) addAttribute(sObj, TEXTURE_ATTRIBUTE);
+	if(!getObjectAttribute(sObj, TEXTURE_ATTRIBUTE)) addObjectAttribute(sObj, TEXTURE_INDEX);
 	vectorPushBack(&sObj->attributes, attr);
 
 	printf("Render Surface Added!\n");
+
+	return (void*) rSurf;
 }
 
 void freeSurface(objectAttribute* objAttr){
@@ -178,31 +184,9 @@ void freeObjectAttribute(objectAttribute* attr){
 	objectAttributeTypes[attr->typeID]->freeFunc(attr);
 }
 
-// void freeObjectAttribute(objectAttribute* attr){
-// 	switch (attr->attributeType){
-// 		case TEXTURE_ATTRIBUTE:{
-// 			texAttr* realAttribute = (texAttr*)attr->attribute;
-// 			if (strcmp(texAttr->textureLocation, DEMOLITION_DEFAULT_TEXTURE) and strcmp(texAttr->textureLocation, DEMOLITION_MISSING_TEXTURE)) SDL_DestroyTexture(realAttribute->tex);
-// 			free(realAttribute);
-// 			free(attr->attribute);
-// 			break;
-// 		}
-// 		case SURFACE_ATTRIBUTE:{
-// 			renderSurface* realAttribute = (renderSurface*)attr->attribute;
-// 			free(realAttribute);
-// 			free(attr->attribute);
-// 			break;
-// 		}
-// 		case ANIMATION_ATTRIBUTE:{
-// 			break;
-// 		}
-// 		default:{
-// 			printf("Non-existant attribute type used");
-// 			break;
-// 		}
-
-// 	}
-// }
+void* addObjectAttribute(spaceObject* sObj, uint8_t type){
+	return objectAttributeTypes[type]->addFunc(sObj, type);
+}
 
 void demolishObject(spaceObject* sObj);
 
@@ -229,83 +213,15 @@ void setAttribute(spaceObject* sObj, demolition_objAttrType type, void* newAttr)
 	objAttr->attribute = newAttr;
 }
 
-// Not tested, found a logic error
-void addAttribute(spaceObject* sObj, demolition_objAttrType attrType){
-	if(getObjectAttribute(sObj, attrType)) {
-		printf("Object already has that attribute!\n");
-		return;
-	}
-	objectAttribute* attr;
-	switch(attrType){
-		case SURFACE_ATTRIBUTE:{
-			renderSurface* rSurf;
-
-			attr = (objectAttribute*) malloc(sizeof(objectAttribute)/ 8);
-			rSurf = (renderSurface*) malloc(sizeof(renderSurface)/8);
-
-			rSurf->area.dimensions = (SDL_Rect){(int)sObj->x, (int)sObj->y, 100, 100};
-			rSurf->area.onMouse1 = defaultClick;
-			attr->attributeType = attrType;
-			attr->attribute = rSurf;
-
-			if(!getObjectAttribute(sObj, TEXTURE_ATTRIBUTE)) addAttribute(sObj, TEXTURE_ATTRIBUTE);
-			vectorPushBack(&sObj->attributes, attr);
-
-			printf("Render Surface Added!\n");
-
-			break;
-		}
-		case TEXTURE_ATTRIBUTE:{
-			texAttr* tAttr;
-
-			attr = (objectAttribute*) malloc(sizeof(objectAttribute)/ 8);
-			tAttr = (texAttr*) malloc(sizeof(texAttr)/8);
-
-			tAttr->tex = defaultTexture;
-			strcpy(tAttr->textureLocation, DEMOLITION_DEFAULT_TEXTURE);
-			attr->attributeType = attrType;
-			attr->attribute = (void*) tAttr;
-
-			vectorPushBack(&sObj->attributes, attr);
-
-			printf("Texture Added!\n");
-			break;
-		}
-		case ANIMATION_ATTRIBUTE:{
-			printf("Animation Added\n");
-			break;
-		}
-		default:{
-			printf("something went wrong, check if the given attribute type was correct!\n");
-			return;
-		}
-	}
-	printf("addAttribute!\n");
-	return;
-}
-
 void* makeObject(){
 	spaceObject* spcObj;
 	spcObj = (spaceObject*) malloc(sizeof(spaceObject) / 8);
 	vector_init(&spcObj->attributes);
 
-	addAttribute(spcObj, SURFACE_ATTRIBUTE);
+	addObjectAttribute(spcObj, SURFACE_INDEX);
 	objectSpace.pfVectorAdd(&objectSpace, (void*) spcObj);
 	printf("createObject!\n");
 	return vectorGet(&objectSpace, vectorTotal(&objectSpace) - 1);
-}
-
-void trackfps(u_int64_t begin) {
-	static int counter;
-
-	counter++;
-	if(counter >= framerate){
-		u_int64_t n = (SDL_GetTicks64() - begin);
-		//float t = n / 1000.0;
-
-		printf("Print Framerate!!!");
-	}
-	return;
 }
 
 void demolish(int winW, int winH, int fps){

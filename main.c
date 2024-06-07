@@ -30,8 +30,8 @@ int main(int argc, char* argv[]){
 	
 	bool exiting = false;	
 	float UpdateFreq  =  1000.0 / framerate;
-	u_int64_t begin = SDL_GetTicks64();
-	
+	int begin = SDL_GetTicks64();
+
 	demolition_button objectCreateButton = {
 		{{100, 20}, makeObject},
 		{defaultTexture, DEMOLITION_DEFAULT_TEXTURE}
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]){
 				}
 				case SDL_MOUSEBUTTONDOWN:{
 					printf("%d\n", clicked(&objectCreateButton.c, &event.button, engineWindow));
-					printf("%d\n", vectorTotal(&objectSpace));
+					//printf("%d\n", vectorTotal(&objectSpace));
 					for(int clickIter = 0; clickIter < vectorTotal(&objectSpace); clickIter++){
 						renderSurface* rendSurfAttr = (renderSurface*) getObjectAttributeFromObjectSpace(clickIter, SURFACE_ATTRIBUTE)->attribute;
 						int numberGot = clicked(&rendSurfAttr->area, &event.button, engineWindow);
