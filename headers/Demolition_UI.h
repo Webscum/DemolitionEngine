@@ -41,7 +41,7 @@ int clicked(clickable* obj, SDL_MouseButtonEvent* but, SDL_Window* win){
 		switch(but->button){
 			case SDL_BUTTON_LEFT:{
 				void* ret = obj->onMouse1();
-				printf("%p", ret);
+				printf("%p\n", ret);
 				return 1;
 				break;
 			}

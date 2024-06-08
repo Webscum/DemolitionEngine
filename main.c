@@ -37,6 +37,7 @@ int main(int argc, char* argv[]){
 		{defaultTexture, DEMOLITION_DEFAULT_TEXTURE}
 	};
 
+
 	queryButtonTex(&objectCreateButton);
 	
 	while(!exiting){
@@ -54,8 +55,9 @@ int main(int argc, char* argv[]){
 					printf("%d\n", clicked(&objectCreateButton.c, &event.button, engineWindow));
 					//printf("%d\n", vectorTotal(&objectSpace));
 					for(int clickIter = 0; clickIter < vectorTotal(&objectSpace); clickIter++){
-						renderSurface* rendSurfAttr = (renderSurface*) getObjectAttributeFromObjectSpace(clickIter, SURFACE_ATTRIBUTE)->attribute;
+						renderSurface* rendSurfAttr = (renderSurface*) getObjectAttributeFromObjectSpace(clickIter, SURFACE_INDEX)->attribute;
 						int numberGot = clicked(&rendSurfAttr->area, &event.button, engineWindow);
+
 						printf("%d\n", numberGot);	
 					}
 					break;

@@ -19,14 +19,14 @@ void initTex(SDL_Texture* texAddr, SDL_Rect* dest,char* fileLocation){
 }
 
 void setTexutre(spaceObject* sObj, SDL_Texture* givenTexture, char* givenTextureLocation){
-	texAttr* objAttr = (texAttr*) getObjectAttribute(sObj, TEXTURE_ATTRIBUTE)->attribute;
+	texAttr* objAttr = (texAttr*) getObjectAttribute(sObj, TEXTURE_INDEX)->attribute;
 	objAttr->tex = givenTexture;
 	objAttr->textureLocation = givenTextureLocation;
 }
 
 void RenderObject(spaceObject* obj){
-	objectAttribute* rendSurface = getObjectAttribute(obj, SURFACE_ATTRIBUTE);
-	objectAttribute* objTexture = getObjectAttribute(obj, TEXTURE_ATTRIBUTE);
+	objectAttribute* rendSurface = getObjectAttribute(obj, SURFACE_INDEX);
+	objectAttribute* objTexture = getObjectAttribute(obj, TEXTURE_INDEX);
 	
 	if (rendSurface){ 
 		SDL_Rect* texDest = &(((renderSurface*)rendSurface->attribute)->area.dimensions);

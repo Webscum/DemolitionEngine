@@ -134,7 +134,7 @@ void* addTexture(spaceObject* sObj, uint8_t type){
 	tAttr = (texAttr*) malloc(sizeof(texAttr));
 
 	tAttr->tex = defaultTexture;
-	strcpy(tAttr->textureLocation, DEMOLITION_DEFAULT_TEXTURE);
+	//strcpy(tAttr->textureLocation, DEMOLITION_DEFAULT_TEXTURE);
 	attr->typeID = type;
 	attr->attribute = (void*) tAttr;
 
@@ -155,18 +155,20 @@ void freeTexture(objectAttribute* objAttr){
 }
 
 void* addSurface(spaceObject* sObj, uint8_t type){
+	static int increase;
+	increase++;
+
 	objectAttribute* attr;
 	renderSurface* rSurf;
 
 	attr = (objectAttribute*) malloc(sizeof(objectAttribute));
 	rSurf = (renderSurface*) malloc(sizeof(renderSurface));
 
-	rSurf->area.dimensions = (SDL_Rect){(int)sObj->x, (int)sObj->y, 100, 100};
+	rSurf->area.dimensions = (SDL_Rect){(int)sObj->x, (int)sObj->y+(100*increase), 100, 100};
 	rSurf->area.onMouse1 = defaultClick;
 	attr->typeID = type;
 	attr->attribute = rSurf;
-
-	if(!getObjectAttribute(sObj, TEXTURE_ATTRIBUTE)) addObjectAttribute(sObj, TEXTURE_INDEX);
+	if(!getObjectAttribute(sObj, TEXTURE_INDEX)) addObjectAttribute(sObj, TEXTURE_INDEX);
 	vectorPushBack(&sObj->attributes, attr);
 
 	printf("Render Surface Added!\n");
@@ -185,6 +187,7 @@ void freeObjectAttribute(objectAttribute* attr){
 }
 
 void* addObjectAttribute(spaceObject* sObj, uint8_t type){
+	printf("Add object index: %i \n", type);
 	return objectAttributeTypes[type]->addFunc(sObj, type);
 }
 
@@ -215,9 +218,8 @@ void setAttribute(spaceObject* sObj, demolition_objAttrType type, void* newAttr)
 
 void* makeObject(){
 	spaceObject* spcObj;
-	spcObj = (spaceObject*) malloc(sizeof(spaceObject) / 8);
-	vector_init(&spcObj->attributes);
-
+	spcObj = (spaceObject*) malloc(sizeof(spaceObject));
+	vector_init(&spcObj->attributes); 
 	addObjectAttribute(spcObj, SURFACE_INDEX);
 	objectSpace.pfVectorAdd(&objectSpace, (void*) spcObj);
 	printf("createObject!\n");
