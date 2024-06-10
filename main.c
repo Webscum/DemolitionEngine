@@ -52,14 +52,17 @@ int main(int argc, char* argv[]){
 					break;
 				}
 				case SDL_MOUSEBUTTONDOWN:{
-					printf("%d\n", clicked(&objectCreateButton.c, &event.button, engineWindow));
+					void* funcParams[3] =  {(void*) &objectSpace, NULL, NULL};
+					printf("%d\n", clicked(&objectCreateButton.c, funcParams, &event.button, engineWindow));
 					//printf("%d\n", vectorTotal(&objectSpace));
 					for(int clickIter = 0; clickIter < vectorTotal(&objectSpace); clickIter++){
-						renderSurface* rendSurfAttr = (renderSurface*) getObjectAttributeFromObjectSpace(clickIter, SURFACE_INDEX)->attribute;
-						int numberGot = clicked(&rendSurfAttr->area, &event.button, engineWindow);
+						funcParams[0] = vectorGet(&objectSpace, clickIter);
+						renderSurface* rendSurfAttr = (renderSurface*) (getObjectAttributeFromObjectSpace(clickIter, SURFACE_INDEX)->attribute);
+						int numberGot = clicked(&rendSurfAttr->area,funcParams, &event.button, engineWindow);
 
-						printf("%d\n", numberGot);	
+						printf("%d ", numberGot);	
 					}
+					printf("\n");
 					break;
 				}
 			}
@@ -83,5 +86,4 @@ int main(int argc, char* argv[]){
 	SDL_Quit();
 	
 }
-
 

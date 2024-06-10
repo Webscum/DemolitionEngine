@@ -15,8 +15,8 @@
 #include "CVector.h"
 
 // Definitions for the addresses of the missing and default textures
-#define DEMOLITION_DEFAULT_TEXTURE "Resources/DefaultTexture.png"
-#define DEMOLITION_MISSING_TEXTURE "Resources/MissingTexture.png"
+char DEMOLITION_DEFAULT_TEXTURE[] = "Resources/DefaultTexture.png";
+char DEMOLITION_MISSING_TEXTURE[] = "Resources/MissingTexture.png";
 
 int framerate;
 vector objectSpace;
@@ -33,28 +33,30 @@ uint8_t ANIMATION_INDEX;
 
 struct spaceObjectVar;
 
-// Made so different renderers can be used for different projects
+// Different renderers can be used for different projects and the user can define their own
 typedef enum demolition_renderer{
 	STANDARD_2D,
 	STANDARD_3D,
 	VULKAN,
+	CUSTOM,
 } demolition_renderer;
 
+// Deprecated, don't use
 typedef enum demolition_object_attribute_type{
 	SURFACE_ATTRIBUTE,
 	TEXTURE_ATTRIBUTE,
 	ANIMATION_ATTRIBUTE,
 } demolition_objAttrType;
 
-// Moved from Demoliton_UI, defines a clickable rectangle
+// Makes the object clickable and gives it functions
 typedef struct{
 	SDL_Rect dimensions;
-	void* (*onMouse1) ();
+	void* (*onMouse1) (void*);
 } clickable;
 
-// Space object and Attributes defenition begins here
+// Space object and Attributes defenition here
 typedef struct spaceObjectVar{
-	uint16_t objIdent; // value in hexadecimal beacause easier to identify
+	uint16_t objIdent; // Display value in hexadecimal beacause easier to identify
 	double x, y, z;
 	vector attributes;
 	vector children;
@@ -69,20 +71,17 @@ typedef struct objectTextureAttribute{
 } texAttr;
 
 typedef struct{
-	clickable area;
-	//Clickable is used for rendering to the clickable area
-	uint8_t renderFlag;
-	// renderFlag for user customization
+	clickable area; //Clickable is used for rendering to the clickable area
+	uint8_t renderFlag; // renderFlag for user customization
 }renderSurface;
 
 typedef struct{
 	demolition_objAttrType attributeType;
 	uint8_t typeID;
 	void* attribute;
-	uint16_t bitFlag;
+	uint16_t bitFlag; 	// BitFlag for customization
 	//Dumb to have an attribute have an attribute inside it
 	//But it helps with modularity and reusablity so it is good design imo
-	//The bitFlag is for user customization
 }objectAttribute;
 
 typedef struct object_Attribute_Type_ID{
@@ -92,6 +91,18 @@ typedef struct object_Attribute_Type_ID{
 } objAttrTypeID;
 
 objAttrTypeID* objectAttributeTypes[128];
+
+
+spaceObject* getObjectFromObjectSpace(uint16_t index){
+	return (spaceObject*) vectorGet(&objectSpace, index);
+}
+
+int deleteFromObjSpace(uint16_t index){
+	for(int objIndx = index; objIndx < vectorTotal(&objectSpace); objIndx++){
+		((spaceObject*) vectorGet(&objectSpace, objIndx))->objIdent--;
+	}
+	return vectorDelete(&objectSpace, index);
+}
 
 void* defaultClick(){
 	printf("defaultClick!");
@@ -120,8 +131,8 @@ objectAttribute* getObjectAttribute(spaceObject* obj, uint8_t type){
 	return NULL;
 }
 
-objectAttribute* getObjectAttributeFromObjectSpace(int indexOfObject, uint8_t type){
-	return getObjectAttribute((spaceObject*) vectorGet(&objectSpace, indexOfObject), type);
+objectAttribute* getObjectAttributeFromObjectSpace(uint16_t indexOfObject, uint8_t type){
+	return getObjectAttribute(getObjectFromObjectSpace(indexOfObject), type);
 }
 
 // Here are the add and free functions for the general attributes,the attribute definitions are in the demolish() function
@@ -134,7 +145,7 @@ void* addTexture(spaceObject* sObj, uint8_t type){
 	tAttr = (texAttr*) malloc(sizeof(texAttr));
 
 	tAttr->tex = defaultTexture;
-	//strcpy(tAttr->textureLocation, DEMOLITION_DEFAULT_TEXTURE);
+	tAttr->textureLocation = DEMOLITION_DEFAULT_TEXTURE;
 	attr->typeID = type;
 	attr->attribute = (void*) tAttr;
 
@@ -145,18 +156,20 @@ void* addTexture(spaceObject* sObj, uint8_t type){
 	return (void*) tAttr;
 }
 
-void* addObjectAttribute(spaceObject *sObj, uint8_t type);
-
 void freeTexture(objectAttribute* objAttr){
 	texAttr* realAttribute = (texAttr*) objAttr->attribute;
-	if (strcmp(realAttribute->textureLocation, DEMOLITION_DEFAULT_TEXTURE) && strcmp(realAttribute->textureLocation, DEMOLITION_MISSING_TEXTURE)) SDL_DestroyTexture(realAttribute->tex);
+
+	if (strcmp(realAttribute->textureLocation, DEMOLITION_DEFAULT_TEXTURE) && strcmp(realAttribute->textureLocation, DEMOLITION_MISSING_TEXTURE)){
+		SDL_DestroyTexture(realAttribute->tex);
+	}
 	free(realAttribute);
-	free(objAttr->attribute);
+	
 }
 
+void* addObjectAttribute(spaceObject *sObj, uint8_t type);
+void* clickDemolish(void*);
+
 void* addSurface(spaceObject* sObj, uint8_t type){
-	static int increase;
-	increase++;
 
 	objectAttribute* attr;
 	renderSurface* rSurf;
@@ -164,8 +177,8 @@ void* addSurface(spaceObject* sObj, uint8_t type){
 	attr = (objectAttribute*) malloc(sizeof(objectAttribute));
 	rSurf = (renderSurface*) malloc(sizeof(renderSurface));
 
-	rSurf->area.dimensions = (SDL_Rect){(int)sObj->x, (int)sObj->y+(100*increase), 100, 100};
-	rSurf->area.onMouse1 = defaultClick;
+	rSurf->area.dimensions = (SDL_Rect){(int)sObj->x, (int)sObj->y+(100*vectorTotal(&objectSpace)), 100, 100};
+	rSurf->area.onMouse1 = clickDemolish;
 	attr->typeID = type;
 	attr->attribute = rSurf;
 	if(!getObjectAttribute(sObj, TEXTURE_INDEX)) addObjectAttribute(sObj, TEXTURE_INDEX);
@@ -177,12 +190,12 @@ void* addSurface(spaceObject* sObj, uint8_t type){
 }
 
 void freeSurface(objectAttribute* objAttr){
-	renderSurface* realAttribute = (renderSurface*)objAttr->attribute;
-	free(realAttribute);
+	//renderSurface* realAttribute = (renderSurface*)objAttr->attribute;
 	free(objAttr->attribute);
 }
 
 void freeObjectAttribute(objectAttribute* attr){
+	printf("Free Attribute %d! \n", attr->typeID);
 	objectAttributeTypes[attr->typeID]->freeFunc(attr);
 }
 
@@ -201,6 +214,12 @@ void freeChildren(spaceObject* sObj){
 }
 
 void demolishObject(spaceObject* sObj){
+	
+	if(deleteFromObjSpace(sObj->objIdent) == UNDEFINE){
+		printf("Deletion of object unsuccesful!\n");
+		return;
+	}
+
 	for(int i = 0; vectorTotal(&sObj->attributes) > i; i++){
 		objectAttribute* objAttr = (objectAttribute*) vectorGet(&sObj->attributes, i);
 		freeObjectAttribute(objAttr);
@@ -209,19 +228,27 @@ void demolishObject(spaceObject* sObj){
 	free(sObj);
 }
 
+
+void* clickDemolish(void* spcObj){
+	printf("Click demolish!\n");
+	demolishObject((spaceObject*) spcObj);
+	return NULL;
+}
+
 // to set attributes of objects
-void setAttribute(spaceObject* sObj, demolition_objAttrType type, void* newAttr){
+void setAttribute(spaceObject* sObj, uint8_t type, void* newAttr){
 	objectAttribute* objAttr = getObjectAttribute(sObj, type);
 	freeObjectAttribute(objAttr);
 	objAttr->attribute = newAttr;
 }
 
-void* makeObject(){
+void* makeObject(void* space){
 	spaceObject* spcObj;
 	spcObj = (spaceObject*) malloc(sizeof(spaceObject));
+	spcObj->objIdent = vectorTotal(&objectSpace);
 	vector_init(&spcObj->attributes); 
 	addObjectAttribute(spcObj, SURFACE_INDEX);
-	objectSpace.pfVectorAdd(&objectSpace, (void*) spcObj);
+	vectorPushBack(((vector*) space), (void*) spcObj);
 	printf("createObject!\n");
 	return vectorGet(&objectSpace, vectorTotal(&objectSpace) - 1);
 }
