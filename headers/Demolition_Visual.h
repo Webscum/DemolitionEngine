@@ -25,13 +25,15 @@ void setTexutre(spaceObject* sObj, SDL_Texture* givenTexture, char* givenTexture
 }
 
 void RenderObject(spaceObject* obj){
-	objectAttribute* rendSurface = getObjectAttribute(obj, SURFACE_INDEX);
-	objectAttribute* objTexture = getObjectAttribute(obj, TEXTURE_INDEX);
-	
-	if (rendSurface){ 
-		SDL_Rect* texDest = &(((renderSurface*)rendSurface->attribute)->area.dimensions);
-		SDL_Texture* tex = ((texAttr*)objTexture->attribute)->tex;
-		SDL_RenderCopy(engineRenderer, (objTexture ? tex : defaultTexture), NULL, texDest);
+	renderSurface* rSurf = getSurface(obj);
+	if (rSurf){
+		texAttr* objTexture = getTextureAttribute(obj);
+		animationAttribute* anim = getAnimationAttribute(obj);
+		if(anim){
+			animateObject(anim, objTexture, SDL_GetTicks64());
+		}
+		SDL_Rect* texDest = &(rSurf->area.dimensions);
+		SDL_RenderCopy(engineRenderer, objTexture->tex, NULL, texDest);
 	}
 	return;
 }
@@ -41,6 +43,10 @@ void RenderScene(){
 		RenderObject((spaceObject*) vectorGet(&objectSpace, rendIter));
 	}
 	return;
+}
+
+void renderSingleTexture(SDL_Texture* texture, SDL_Rect* destRect){
+	SDL_RenderCopy(engineRenderer, texture, NULL, destRect);
 }
 
 void trackfps(int begin) {

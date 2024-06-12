@@ -1,3 +1,5 @@
+//#include <cstdint>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
@@ -37,6 +39,15 @@ int main(int argc, char* argv[]){
 		{defaultTexture, DEMOLITION_DEFAULT_TEXTURE}
 	};
 
+	spaceObject* animationTest = (spaceObject*) makeObject(&objectSpace);
+
+	addObjectAttribute(animationTest, ANIMATION_INDEX); //The program breaks here!
+
+	uint16_t corners[2] = {0,0};
+	uint16_t frameSize[2] = {1000/7, 1000/7};
+
+	createAnimations(animationTest, "Resources/BombSprites.jpg", corners, frameSize, (uint8_t[][2]) {{7, 100}});
+
 
 	queryButtonTex(&objectCreateButton);
 	
@@ -71,7 +82,10 @@ int main(int argc, char* argv[]){
 		
 		SDL_RenderClear(engineRenderer);
 		RenderScene();
-		
+		SDL_Rect rect = (SDL_Rect){32, 32, 600, 600};
+		renderSingleTexture( getTextureAttribute(animationTest)->tex, &rect);
+
+		move(animationTest, (uint16_t[2]) {500, 500});
 		RenderButton(&objectCreateButton);
 		//RenderDemolitionUI();
 		SDL_RenderPresent(engineRenderer);
