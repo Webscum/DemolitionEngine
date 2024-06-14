@@ -52,6 +52,7 @@ typedef enum demolition_object_attribute_type{
 typedef struct{
 	SDL_Rect dimensions;
 	void* (*onMouse1) (void*);
+	void* (*onMouse2) (void*);
 } clickable;
 
 // Space object and Attributes defenition here
@@ -85,7 +86,7 @@ typedef struct{
 typedef struct{
 	vector animations;
 	uint8_t animationCount;
-	uint8_t lastSwap;
+	int lastSwap;
 	uint8_t selectedAnimation;
 	uint8_t animationFlag;
 } animationAttribute;
@@ -185,6 +186,7 @@ void freeTexture(spaceObject* sObj){
 
 void* addObjectAttribute(spaceObject *sObj, uint8_t type);
 void* clickDemolish(void*);
+void* clickMove(void*);
 
 void* addSurface(spaceObject* sObj, uint8_t type){
 
@@ -197,6 +199,7 @@ void* addSurface(spaceObject* sObj, uint8_t type){
 
 	rSurf->area.dimensions = (SDL_Rect){(int)sObj->x, (int)sObj->y+(100*vectorTotal(&objectSpace)), 100, 100};
 	rSurf->area.onMouse1 = clickDemolish;
+	rSurf->area.onMouse2 = clickMove;
 	attr->typeID = type;
 	attr->attribute = (void*) rSurf;
 	if(!getObjectAttribute(sObj, TEXTURE_INDEX)) addObjectAttribute(sObj, TEXTURE_INDEX);
@@ -296,7 +299,7 @@ renderSurface* getSurface(spaceObject* sObj){
 }
 
 SDL_Rect* getRenderSurfaceRect(spaceObject* sObj){
-	return & ((clickable*) &getSurface(sObj)->area)->dimensions;
+	return &((clickable*) &getSurface(sObj)->area)->dimensions;
 }
 
 animationAttribute* getAnimationAttribute(spaceObject* sObj){
@@ -327,13 +330,13 @@ vector* getFramesVector(spaceObject* sObj, int index){
 	return &((animation*) vectorGet(getAnimationsVector(sObj), index))->frames;
 }
 
-void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerClip[2], uint16_t frameSize[2], uint8_t animationArray[][2] /*example {{3, .2},{2, .3},{5. 0}} there are 10 frames in total and this is how you get different animations from the same sprite sheet*/){
+void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerClip[2], uint16_t frameSize[2], uint16_t animationArray[][2] /*example {{3, .2},{2, .3},{5. 0}} there are 10 frames in total and this is how you get different animations from the same sprite sheet*/){
 	SDL_Surface* srcSurface = IMG_Load(imageLocation);
 	SDL_Rect clip = {cornerClip[0], cornerClip[1], frameSize[0], frameSize[1]};
-	SDL_Surface* destSurface;
 	SDL_Rect* destRect = getRenderSurfaceRect(sObj);
+	SDL_Surface* destSurface = SDL_CreateRGBSurface(0, clip.w, clip.h, 32, 0, 0, 0, 0);
 
-	uint8_t animationAmount = sizeof(*animationArray) / sizeof(animationArray[0]);
+	uint16_t animationAmount = sizeof(*animationArray) / (sizeof(animationArray[0][1])*2);
 	uint8_t framesPerRow = (srcSurface->w - cornerClip[0] * 2) / frameSize[0];
 	uint8_t row = 0;
 	uint8_t column = 0;
@@ -351,9 +354,11 @@ void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerCli
 		vector_init(&anim->frames);
 		vectorPushBack(getAnimationsVector(sObj), (void*) anim);
 		for (int frameIndex= 0; frameIndex < animationArray[animIndex][0]; frameIndex++) {
-			printf("frame: %d\n", frameIndex); // Starts to trip out somewhere after here!, fix tomorrow!
+			//printf("frame: %d\n", frameIndex); // Starts to trip out somewhere after here!, fix tomorrow!
 			SDL_BlitSurface(srcSurface, &clip, destSurface, destRect);
-			vectorPushBack(getFramesVector(sObj, animIndex), (void*) SDL_CreateTextureFromSurface(engineRenderer, destSurface));
+
+			SDL_Texture* surfTex = SDL_CreateTextureFromSurface(engineRenderer, destSurface);
+			vectorPushBack(&anim->frames, (void*) surfTex);
 
 			row++;
 			if(row >= framesPerRow){
@@ -365,8 +370,14 @@ void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerCli
 			clip.y = cornerClip[1] + frameSize[1]*column;
 		}
 
-		if(anim->duration) anim->duration = animationArray[animIndex][1];
-		else anim->manual = true;
+		if(animationArray[animIndex][1]){
+			printf("Animation has Duration\n");
+			anim->duration = animationArray[animIndex][1];
+		}
+		else{
+			printf("Animation is Manual\n");
+			anim->manual = true;
+		}
 	}
 	animAttr->lastSwap = SDL_GetTicks64();
 }
@@ -374,8 +385,8 @@ void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerCli
 void animateObject(animationAttribute* animAttr, texAttr* texture, int time){
 	animation* anim = (animation*) vectorGet(&animAttr->animations, animAttr->selectedAnimation);
 	if(anim->manual || time - animAttr->lastSwap >= anim->duration){
-		texture->tex = (SDL_Texture*) vectorGet(&anim->frames, ++anim->currentFrame);
-		animAttr->lastSwap = SDL_GetTicks64();
+		texture->tex = (SDL_Texture*) vectorGet(&anim->frames, ++anim->currentFrame % vectorTotal(&anim->frames));
+		animAttr->lastSwap = time;
 	}
 }
 
@@ -413,10 +424,23 @@ void* makeObject(void* space){
 	return vectorGet(&objectSpace, vectorTotal(&objectSpace) - 1);
 }
 
-void move(spaceObject* sObj, uint16_t newPos[2] ){
+void moveBy(spaceObject* sObj, uint16_t vec2D[2] ){
 	SDL_Rect* objectRect = getRenderSurfaceRect(sObj);
+	printf("Move the object!\n");
+	objectRect->x += vec2D[0];
+	objectRect->y += vec2D[1];
+}
+
+void moveTo(spaceObject* sObj, uint16_t newPos[2]){
+	SDL_Rect* objectRect = getRenderSurfaceRect(sObj);
+	printf("Move the object!\n");
 	objectRect->x = newPos[0];
 	objectRect->y = newPos[1];
+}
+
+void* clickMove(void* sObj){
+	moveBy((spaceObject*) sObj, (uint16_t[2]) {20,20});
+	return NULL;
 }
 
 void demolish(int winW, int winH, int fps){

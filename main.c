@@ -41,12 +41,12 @@ int main(int argc, char* argv[]){
 
 	spaceObject* animationTest = (spaceObject*) makeObject(&objectSpace);
 
-	addObjectAttribute(animationTest, ANIMATION_INDEX); //The program breaks here!
+	addObjectAttribute(animationTest, ANIMATION_INDEX);
 
-	uint16_t corners[2] = {0,0};
-	uint16_t frameSize[2] = {1000/7, 1000/7};
+	uint16_t corners[2] = {40,40};
+	uint16_t frameSize[2] = {120, 120};
 
-	createAnimations(animationTest, "Resources/BombSprites.jpg", corners, frameSize, (uint8_t[][2]) {{7, 100}});
+	createAnimations(animationTest, "Resources/BombSprites.jpg", corners, frameSize, (uint16_t[][2]) {{7, 75}});
 
 
 	queryButtonTex(&objectCreateButton);
@@ -66,13 +66,7 @@ int main(int argc, char* argv[]){
 					void* funcParams[3] =  {(void*) &objectSpace, NULL, NULL};
 					printf("%d\n", clicked(&objectCreateButton.c, funcParams, &event.button, engineWindow));
 					//printf("%d\n", vectorTotal(&objectSpace));
-					for(int clickIter = 0; clickIter < vectorTotal(&objectSpace); clickIter++){
-						funcParams[0] = vectorGet(&objectSpace, clickIter);
-						renderSurface* rendSurfAttr = (renderSurface*) (getObjectAttributeFromObjectSpace(clickIter, SURFACE_INDEX)->attribute);
-						int numberGot = clicked(&rendSurfAttr->area,funcParams, &event.button, engineWindow);
-
-						printf("%d ", numberGot);	
-					}
+					checkClicks(&event.button);
 					printf("\n");
 					break;
 				}
@@ -82,15 +76,15 @@ int main(int argc, char* argv[]){
 		
 		SDL_RenderClear(engineRenderer);
 		RenderScene();
-		SDL_Rect rect = (SDL_Rect){32, 32, 600, 600};
-		renderSingleTexture( getTextureAttribute(animationTest)->tex, &rect);
+		//SDL_Rect rect = (SDL_Rect){32, 32, 600, 600};
+		//renderSingleTexture( getTextureAttribute(animationTest)->tex, &rect);
 
-		move(animationTest, (uint16_t[2]) {500, 500});
+		//move(animationTest, (uint16_t[2]) {500, 500});
 		RenderButton(&objectCreateButton);
 		//RenderDemolitionUI();
 		SDL_RenderPresent(engineRenderer);
-		SDL_Delay(UpdateFreq);
-		trackfps(begin);
+		//SDL_Delay(UpdateFreq);
+		//trackfps(begin);
 	}
 
 	//SDL_DestroyRenderer(rend);
@@ -100,4 +94,3 @@ int main(int argc, char* argv[]){
 	SDL_Quit();
 	
 }
-

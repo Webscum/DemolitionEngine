@@ -8,8 +8,11 @@
 typedef struct DemolitionRigidBody2D{
 	float mass;
 	float gravityScale;
-}RB2D;
+	float forceVector[2];
+}RB_2D;
 
+void physicsTick(){
 
+}
 
 #endif
