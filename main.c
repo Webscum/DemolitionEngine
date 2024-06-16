@@ -46,14 +46,10 @@ int main(int argc, char* argv[]){
 	uint16_t corners[2] = {40,40};
 	uint16_t frameSize[2] = {120, 120};
 
-	createAnimations(animationTest, "Resources/CarSprites.jpg", corners, frameSize, 2, (uint16_t[][2]) {{4, 50}, {4, 100}});
+	createAnimations(animationTest, "Resources/CarSprites.jpg", corners, frameSize, 2, (uint16_t[][2]) {{4, 1000}, {4, 1000}});
 
 
 	setSelectedAnimation(animAttr, 1);
-
-	switchObjectFlagBits(animationTest, 3, (uint8_t[]) {2, 6, 1});
-
-	putb(animationTest->objectFlag);
 
 	queryButtonTex(&objectCreateButton);
 	
