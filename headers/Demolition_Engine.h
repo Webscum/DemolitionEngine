@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "CVector.h"
+#include <limits.h>
 
 // Definitions for the addresses of the missing and default textures
 char DEMOLITION_DEFAULT_TEXTURE[] = "Resources/DefaultTexture.png";
@@ -33,6 +34,18 @@ uint8_t ANIMATION_INDEX;
 
 struct spaceObjectVar;
 
+void putb(unsigned long long n)
+{
+    char b[(sizeof n * CHAR_BIT) + 1];
+    char *p = b + sizeof b;
+    *--p = '\0';
+    for (; p-- > b;  n >>= 1) {
+        *p = '0' + (char)(n & 1);
+    }
+    puts(b);
+}
+
+
 // Different renderers can be used for different projects and the user can define their own
 typedef enum demolition_renderer{
 	STANDARD_2D,
@@ -40,6 +53,8 @@ typedef enum demolition_renderer{
 	VULKAN,
 	CUSTOM,
 } demolition_renderer;
+demolition_renderer selectedRenderer;
+
 
 // Deprecated, don't use
 typedef enum demolition_object_attribute_type{
@@ -55,15 +70,95 @@ typedef struct{
 	void* (*onMouse2) (void*);
 } clickable;
 
+SDL_Rect getClickableRect(clickable* c){
+	return c->dimensions;
+}
+
+void setClickableRect(clickable* c, SDL_Rect r){
+	c->dimensions = r;
+}
+
+void  addToClickableRect(clickable* c, SDL_Rect r){
+	SDL_Rect cr = c->dimensions;
+	cr.x += r.x;
+	cr.y += r.y;
+	cr.w += r.w;
+	cr.h += r.h;
+}
+
+typedef struct geometryVector2D{
+	double x, y;
+} gVec2D;
+
+typedef struct geometryVector3D{
+	double x, y, z;
+} gVec3D;
+
 // Space object and Attributes defenition here
 typedef struct spaceObjectVar{
 	uint16_t objIdent; // Display value in hexadecimal beacause easier to identify
-	double x, y, z;
+	gVec3D coordinates;
 	vector attributes;
 	vector children;
 	struct spaceObjectVar* parent;
 	uint16_t objectFlag;
 } spaceObject;
+
+// BEGIN HERE!
+gVec3D* getObjectCoordinates(spaceObject* sObj){
+	return  &sObj->coordinates;
+}
+
+void setObjectCoordinates(spaceObject* sObj, double x, double y, double z){
+	gVec3D* objectCoordinates = &sObj->coordinates;
+	objectCoordinates->x = x;
+	objectCoordinates->y = y;
+	objectCoordinates->z = z;
+}
+
+void addToObjectCoordinates(spaceObject* sObj, double x, double y, double z){
+	gVec3D* objectCoordinates = &sObj->coordinates;
+	objectCoordinates->x += x;
+	objectCoordinates->y += y;
+	objectCoordinates->z += z;
+}
+
+void setObjectCoordinatesWithVector(spaceObject* sObj, gVec3D newCoords){
+	sObj->coordinates = newCoords;
+}
+
+void addToObjectCoordinatesWithVector(spaceObject* sObj, gVec3D newCoords){
+	addToObjectCoordinates(sObj, newCoords.x, newCoords.y, newCoords.z);
+}
+
+void swapObjectCoordinates(spaceObject* firstObj, spaceObject* secondObj){
+	gVec3D firstCoords = firstObj->coordinates;
+	firstObj->coordinates = secondObj->coordinates;
+	secondObj->coordinates = firstCoords;
+}
+
+void setObjectFlag(spaceObject* sObj, uint16_t newFlag){
+	sObj->objectFlag = newFlag;
+}
+
+void switchObjectFlagBit(spaceObject* sObj, uint8_t index){
+	if(index < 16) sObj->objectFlag |= 1 << index;
+}
+
+void switchObjectFlagBits(spaceObject* sObj, uint8_t indiciesLength, uint8_t indicies[]){
+	if (indicies){
+		for(int iteration = 0; iteration < indiciesLength; iteration++){
+			switchObjectFlagBit(sObj, indicies[iteration]);
+		}
+	}
+	else{
+		printf("No indicies provided");
+	}
+}
+
+uint16_t getObjectFlag(spaceObject* sObj){
+	return sObj->objectFlag;
+}
 
 typedef struct objectTextureAttribute{
 	SDL_Texture* tex;
@@ -90,6 +185,14 @@ typedef struct{
 	uint8_t selectedAnimation;
 	uint8_t animationFlag;
 } animationAttribute;
+
+void setSelectedAnimation(animationAttribute* animAttr, uint8_t newAnim){
+	if(newAnim > animAttr->animationCount){
+		((animation*) vectorGet(&animAttr->animations, animAttr->selectedAnimation))->currentFrame = 0;
+		animAttr->selectedAnimation = newAnim;
+	}
+}
+
 
 typedef struct{
 	demolition_objAttrType attributeType;
@@ -197,13 +300,12 @@ void* addSurface(spaceObject* sObj, uint8_t type){
 	rSurf = (renderSurface*) malloc(sizeof(renderSurface));
 
 
-	rSurf->area.dimensions = (SDL_Rect){(int)sObj->x, (int)sObj->y+(100*vectorTotal(&objectSpace)), 100, 100};
+	rSurf->area.dimensions = (SDL_Rect){(int)sObj->coordinates.x, (int)sObj->coordinates.y+(100*vectorTotal(&objectSpace)), 100, 100};
 	rSurf->area.onMouse1 = clickDemolish;
 	rSurf->area.onMouse2 = clickMove;
 	attr->typeID = type;
 	attr->attribute = (void*) rSurf;
 	if(!getObjectAttribute(sObj, TEXTURE_INDEX)) addObjectAttribute(sObj, TEXTURE_INDEX);
-	//printf("Hello debugger 0!\n");
 	vectorPushBack(&sObj->attributes, attr);
 
 	printf("Render Surface Added!\n");
@@ -226,7 +328,6 @@ void* addAnimation(spaceObject* sObj, uint8_t type){
 
 	attr->typeID = type;
 	attr->attribute = anim;
-	//printf("Hello debugger 0!\n");
 	if(!getObjectAttribute(sObj, SURFACE_INDEX)) addObjectAttribute(sObj, SURFACE_INDEX);
 
 	vector_init(&anim->animations);
@@ -330,13 +431,12 @@ vector* getFramesVector(spaceObject* sObj, int index){
 	return &((animation*) vectorGet(getAnimationsVector(sObj), index))->frames;
 }
 
-void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerClip[2], uint16_t frameSize[2], uint16_t animationArray[][2] /*example {{3, .2},{2, .3},{5. 0}} there are 10 frames in total and this is how you get different animations from the same sprite sheet*/){
+void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerClip[2], uint16_t frameSize[2], uint8_t animationAmount,uint16_t animationArray[][2] /*example {{3, .2},{2, .3},{5. 0}} there are 10 frames in total and this is how you get different animations from the same sprite sheet*/){
 	SDL_Surface* srcSurface = IMG_Load(imageLocation);
 	SDL_Rect clip = {cornerClip[0], cornerClip[1], frameSize[0], frameSize[1]};
 	SDL_Rect* destRect = getRenderSurfaceRect(sObj);
 	SDL_Surface* destSurface = SDL_CreateRGBSurface(0, clip.w, clip.h, 32, 0, 0, 0, 0);
 
-	uint16_t animationAmount = sizeof(*animationArray) / (sizeof(animationArray[0][1])*2);
 	uint8_t framesPerRow = (srcSurface->w - cornerClip[0] * 2) / frameSize[0];
 	uint8_t row = 0;
 	uint8_t column = 0;

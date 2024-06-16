@@ -41,13 +41,19 @@ int main(int argc, char* argv[]){
 
 	spaceObject* animationTest = (spaceObject*) makeObject(&objectSpace);
 
-	addObjectAttribute(animationTest, ANIMATION_INDEX);
+	animationAttribute* animAttr =(animationAttribute*) addObjectAttribute(animationTest, ANIMATION_INDEX);
 
 	uint16_t corners[2] = {40,40};
 	uint16_t frameSize[2] = {120, 120};
 
-	createAnimations(animationTest, "Resources/BombSprites.jpg", corners, frameSize, (uint16_t[][2]) {{7, 75}});
+	createAnimations(animationTest, "Resources/CarSprites.jpg", corners, frameSize, 2, (uint16_t[][2]) {{4, 50}, {4, 100}});
 
+
+	setSelectedAnimation(animAttr, 1);
+
+	switchObjectFlagBits(animationTest, 3, (uint8_t[]) {2, 6, 1});
+
+	putb(animationTest->objectFlag);
 
 	queryButtonTex(&objectCreateButton);
 	
