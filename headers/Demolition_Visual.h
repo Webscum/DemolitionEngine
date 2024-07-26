@@ -68,8 +68,6 @@ void trackfps(int begin) {
 #ifdef DEMOLITION_ENGINE_UI_H
 void queryButtonTex(demolition_button* butt){
 	SDL_QueryTexture(butt->t.tex, NULL, NULL, &butt->c.dimensions.w, &butt->c.dimensions.h);
-	butt->c.dimensions.w /= 2;
-	butt->c.dimensions.h /= 2;
 	return;
 }
 

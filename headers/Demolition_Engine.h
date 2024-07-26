@@ -1,8 +1,9 @@
 #ifndef DEMOLITION_ENGINE_H
 #define DEMOLITION_ENGINE_H
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_render.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_stdinc.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
@@ -14,6 +15,7 @@
 #include <stdint.h>
 #include "CVector.h"
 #include <limits.h>
+#include <SDL2/SDL_audio.h>
 
 // Definitions for the addresses of the missing and default textures
 char DEMOLITION_DEFAULT_TEXTURE[] = "Resources/DefaultTexture.png";
@@ -25,6 +27,8 @@ SDL_Window* engineWindow;
 SDL_Renderer* engineRenderer;
 SDL_Texture* defaultTexture;
 SDL_Texture* missingTexture;
+SDL_AudioDeviceID engineAudio;
+SDL_AudioSpec* engineAudioSpec; 
 
 // Here so they can be called and makes the users life easier and my code slicker
 // They are just the indicies that the objects attributes are at in the array containing all the object attributes
@@ -43,6 +47,40 @@ void putb(unsigned long long n)
         *p = '0' + (char)(n & 1);
     }
     puts(b);
+}
+
+int timeSince(int origin){
+	return SDL_GetTicks64() - origin;
+}
+
+void switch16BitFlagBit(uint16_t* flag, uint8_t index){
+	if(index < 16) *flag |= 1 << index;
+}
+
+void switch8BitFlagBit(uint8_t* flag, uint8_t index){
+	if(index < 8) *flag |= 1 << index;
+}
+
+void switch16BitFlagBits(uint16_t* flag, uint8_t indiciesLength, uint8_t indicies[]){
+	if (indicies){
+		for(int iteration = 0; iteration < indiciesLength; iteration++){
+			switch16BitFlagBit(flag, indicies[iteration]);
+		}
+	}
+	else{
+		printf("No indicies provided");
+	}
+}
+
+void switch8BitFlagBits(uint8_t* flag, uint8_t indiciesLength, uint8_t indicies[]){
+	if (indicies){
+		for(int iteration = 0; iteration < indiciesLength; iteration++){
+			switch8BitFlagBit(flag, indicies[iteration]);
+		}
+	}
+	else{
+		printf("No indicies provided");
+	}
 }
 
 
@@ -142,18 +180,11 @@ void setObjectFlag(spaceObject* sObj, uint16_t newFlag){
 }
 
 void switchObjectFlagBit(spaceObject* sObj, uint8_t index){
-	if(index < 16) sObj->objectFlag |= 1 << index;
+	switch16BitFlagBit(&sObj->objectFlag, index);
 }
 
 void switchObjectFlagBits(spaceObject* sObj, uint8_t indiciesLength, uint8_t indicies[]){
-	if (indicies){
-		for(int iteration = 0; iteration < indiciesLength; iteration++){
-			switchObjectFlagBit(sObj, indicies[iteration]);
-		}
-	}
-	else{
-		printf("No indicies provided");
-	}
+	switch16BitFlagBits(&sObj->objectFlag, indiciesLength, indicies);
 }
 
 uint16_t getObjectFlag(spaceObject* sObj){
@@ -166,10 +197,42 @@ typedef struct objectTextureAttribute{
 	uint8_t textureFlag;
 } texAttr;
 
+void setTextureLocation(texAttr* tAttr, char* newLocation){
+	tAttr->textureLocation = newLocation;
+}
+
+void setTexture(texAttr* tAttr, SDL_Texture* newTex){
+	tAttr->tex = newTex;
+}
+
+void switchTextureFlagBit(texAttr* tAttr, uint8_t index){
+	switch8BitFlagBit(&tAttr->textureFlag, index);
+}
+
+void switchTextureFlagBits(texAttr* tAttr, uint8_t indiciesLength, uint8_t indicies[]){
+	switch8BitFlagBits(&tAttr->textureFlag, indiciesLength, indicies);
+}
+
 typedef struct{
 	clickable area; //Clickable is used for rendering to the clickable area
 	uint8_t renderFlag; // renderFlag for user customization
 }renderSurface;
+
+clickable* getRenderSurfaceClickable(renderSurface* rSurf){
+	return &rSurf->area;
+}
+
+void setRenderSurfaceAreaSize(renderSurface* rSurf, SDL_Rect newSize){
+	setClickableRect(getRenderSurfaceClickable(rSurf), newSize); 
+}
+
+void setRenderFlag(renderSurface* rSurf, uint8_t newFlag){
+	rSurf->renderFlag = newFlag;
+}
+
+void switchRenderFlag(renderSurface* rSurf, uint8_t index){
+	switch8BitFlagBit(&rSurf->renderFlag, index);
+}
 
 typedef struct{
 	vector frames;
@@ -186,10 +249,17 @@ typedef struct{
 	uint8_t animationFlag;
 } animationAttribute;
 
+uint8_t getAnimationCount(animationAttribute* animAttr){
+	return animAttr->animationCount;
+}
+
 void setSelectedAnimation(animationAttribute* animAttr, uint8_t newAnim){
-	if(newAnim > animAttr->animationCount){
+	if(newAnim < getAnimationCount(animAttr)){
 		((animation*) vectorGet(&animAttr->animations, animAttr->selectedAnimation))->currentFrame = 0;
 		animAttr->selectedAnimation = newAnim;
+	}
+	else{
+		printf("Provided animation index not available!\n");
 	}
 }
 
@@ -349,6 +419,7 @@ void freeAnimation(spaceObject* sObj){
 		}
 		vectorFree(&anim->frames);
 	}
+
 	vectorFree(&animAttr->animations);
 	free(animAttr);
 	free(objAttr);
@@ -435,7 +506,8 @@ void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerCli
 	SDL_Surface* srcSurface = IMG_Load(imageLocation);
 	SDL_Rect clip = {cornerClip[0], cornerClip[1], frameSize[0], frameSize[1]};
 	SDL_Rect* destRect = getRenderSurfaceRect(sObj);
-	SDL_Surface* destSurface = SDL_CreateRGBSurface(0, clip.w, clip.h, 32, 0, 0, 0, 0);
+	const SDL_Rect ogDestRect = *destRect;
+	SDL_Surface* destSurface = SDL_CreateRGBSurface(0, destRect->w, destRect->h, 32, 0, 0, 0, 0);
 
 	uint8_t framesPerRow = (srcSurface->w - cornerClip[0] * 2) / frameSize[0];
 	uint8_t row = 0;
@@ -455,19 +527,24 @@ void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerCli
 		vectorPushBack(getAnimationsVector(sObj), (void*) anim);
 		for (int frameIndex= 0; frameIndex < animationArray[animIndex][0]; frameIndex++) {
 			//printf("frame: %d\n", frameIndex); // Starts to trip out somewhere after here!, fix tomorrow!
+			
+			destSurface->w = clip.w, destSurface->h = clip.h;
+			destRect->w = clip.w, destRect->h = clip.h;
 			SDL_BlitSurface(srcSurface, &clip, destSurface, destRect);
-
 			SDL_Texture* surfTex = SDL_CreateTextureFromSurface(engineRenderer, destSurface);
+			SDL_QueryTexture(surfTex, NULL, NULL, &destRect->w, &destRect->h);
+			destSurface->w = ogDestRect.w, destSurface->h = ogDestRect.h;
+			destRect->w = ogDestRect.w, destRect->h = ogDestRect.h;
 			vectorPushBack(&anim->frames, (void*) surfTex);
 
-			row++;
-			if(row >= framesPerRow){
-				column++;
-				row %= framesPerRow;
+			column++;
+			if(column >= framesPerRow){
+				row++;
+				column %= framesPerRow;
 			}
 
-			clip.x = cornerClip[0] + frameSize[0]*row;
-			clip.y = cornerClip[1] + frameSize[1]*column;
+			clip.x = cornerClip[0] + frameSize[0]*column;
+			clip.y = cornerClip[1] + frameSize[1]*row;
 		}
 
 		if(animationArray[animIndex][1]){
@@ -479,6 +556,8 @@ void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerCli
 			anim->manual = true;
 		}
 	}
+	SDL_FreeSurface(destSurface);
+	SDL_FreeSurface(srcSurface);
 	animAttr->lastSwap = SDL_GetTicks64();
 }
 
@@ -487,16 +566,6 @@ void animateObject(animationAttribute* animAttr, texAttr* texture, int time){
 	if(anim->manual || time - animAttr->lastSwap >= anim->duration){
 		texture->tex = (SDL_Texture*) vectorGet(&anim->frames, ++anim->currentFrame % vectorTotal(&anim->frames));
 		animAttr->lastSwap = time;
-	}
-}
-
-void setAnimation(spaceObject* sObj, uint8_t selected){
-	animationAttribute* animAttr = getAnimationAttribute(sObj);
-	if(selected < 0 || selected > animAttr->animationCount){
-		printf("non-valid animation index given!");
-	}
-	else{
-		animAttr->selectedAnimation = selected;
 	}
 }
 
@@ -518,8 +587,9 @@ void* makeObject(void* space){
 	spcObj = (spaceObject*) malloc(sizeof(spaceObject));
 	spcObj->objIdent = vectorTotal(&objectSpace);
 	vector_init(&spcObj->attributes); 
-	addObjectAttribute(spcObj, SURFACE_INDEX);
+	renderSurface* rSurf = (renderSurface*) addObjectAttribute(spcObj, SURFACE_INDEX);
 	vectorPushBack(((vector*) space), (void*) spcObj);
+	setObjectCoordinates(spcObj, 0.0, 0.0, 1.0);
 	printf("createObject!\n");
 	return vectorGet(&objectSpace, vectorTotal(&objectSpace) - 1);
 }
@@ -549,7 +619,18 @@ void demolish(int winW, int winH, int fps){
 	
 	u_int32_t render_flags = SDL_RENDERER_ACCELERATED;
 	engineRenderer = SDL_CreateRenderer(engineWindow, -1, render_flags);
-	
+
+	//SDL_AudioSpec* desiredAudioSpec;
+	//SDL_memset(desiredAudioSpec, 0, sizeof(SDL_AudioSpec))
+	//desiredAudioSpec->freq = 46000;
+	//desiredAudioSpec->format = AUDIO_F32;
+	//desiredAudioSpec->channels = 2;
+	//desiredAudioSpec->samples = 4096;
+	//desiredAudioSpec->callback = NULL
+	//engineAudio = SDL_OpenAudioDevice(NULL, 0, desiredAudioSpec, engineAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+	//SDL_AudioInit(engineAudio);
+
+
 	vector_init(&objectSpace);
 
 	TEXTURE_INDEX = createObjAttribute(addTexture, freeTexture);
@@ -566,20 +647,48 @@ void demolish(int winW, int winH, int fps){
 	missingTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
 	SDL_FreeSurface(surface);
 
-	//Setting the window icon
+	//Setting the window icon, we dont free it because the same image is used in startup
 	surface = IMG_Load("Resources/AppIcon.png");
 	SDL_SetWindowIcon(engineWindow, surface);
-	SDL_FreeSurface(surface);
-	
-	srand(time(NULL));
+	SDL_Texture* startUpTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
+	SDL_FreeSurface(surface); 
+	printf("Here now heheh\n");
 
 	framerate = fps;
 	
 	printf("Demolition Engine Working!\n");
+
+	int cubeSide = winH < winW ? winH / 4 * 3 : winW / 4 * 3;
+
+	SDL_Rect demolitionStartUpRectangle = {(winW - cubeSide) / 2, (winH - cubeSide) / 2, cubeSide, cubeSide};
+
+	int origin = SDL_GetTicks64();
+	
+
+	for(int timeSinceOrigin = timeSince(origin); timeSinceOrigin < 3000; timeSinceOrigin = timeSince(origin)){
+		
+		SDL_RenderClear(engineRenderer);
+
+		if(timeSinceOrigin < 1000){
+			SDL_SetTextureAlphaMod(startUpTexture, 255 * (timeSinceOrigin/1000.0 + 0.001));
+		}
+		else{
+			SDL_SetTextureAlphaMod(startUpTexture, 255 * (1.0 - ((timeSinceOrigin-1000) / 2000.0)));
+		}
+
+		SDL_RenderCopy(engineRenderer, startUpTexture, NULL, &demolitionStartUpRectangle);
+
+		SDL_RenderPresent(engineRenderer);
+	}
+	SDL_DestroyTexture(startUpTexture);
+
 	return;
 }
 
-void demolitionStop(){
+void stopDemolition(){
+	SDL_DestroyRenderer(engineRenderer);
+	SDL_DestroyWindow(engineWindow);
+	SDL_Quit();
 	printf("Stop the demolition!!!\n");
 	return;
 }

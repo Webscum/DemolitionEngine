@@ -1,4 +1,5 @@
 //#include <cstdint>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -35,25 +36,23 @@ int main(int argc, char* argv[]){
 	int begin = SDL_GetTicks64();
 
 	demolition_button objectCreateButton = {
-		{{100, 20}, makeObject},
+		{{300, 20, 100, 100}, makeObject},
 		{defaultTexture, DEMOLITION_DEFAULT_TEXTURE}
 	};
 
 	spaceObject* animationTest = (spaceObject*) makeObject(&objectSpace);
 
-	animationAttribute* animAttr =(animationAttribute*) addObjectAttribute(animationTest, ANIMATION_INDEX);
+	animationAttribute* animAttr = (animationAttribute*) addObjectAttribute(animationTest, ANIMATION_INDEX);
 
-	uint16_t corners[2] = {40,40};
-	uint16_t frameSize[2] = {120, 120};
+	uint16_t corners[2] = {0,0};
+	uint16_t frameSize[2] = {1, 1};
 
-	createAnimations(animationTest, "Resources/CarSprites.jpg", corners, frameSize, 2, (uint16_t[][2]) {{4, 1000}, {4, 1000}});
+	createAnimations(animationTest, "Resources/SpriteSheet.png", corners, frameSize, 3, (uint16_t[][2]) {{6, 100}, {7, 100}, {3, 100}});
 
 
-	setSelectedAnimation(animAttr, 1);
-
-	queryButtonTex(&objectCreateButton);
-	
+	//queryButtonTex(&objectCreateButton);
 	while(!exiting){
+		
 		begin = SDL_GetTicks64();
 		bool attributes = false;
 		SDL_Event event;
@@ -67,7 +66,6 @@ int main(int argc, char* argv[]){
 				case SDL_MOUSEBUTTONDOWN:{
 					void* funcParams[3] =  {(void*) &objectSpace, NULL, NULL};
 					printf("%d\n", clicked(&objectCreateButton.c, funcParams, &event.button, engineWindow));
-					//printf("%d\n", vectorTotal(&objectSpace));
 					checkClicks(&event.button);
 					printf("\n");
 					break;
@@ -75,7 +73,7 @@ int main(int argc, char* argv[]){
 			}
 
 		}
-		
+
 		SDL_RenderClear(engineRenderer);
 		RenderScene();
 		//SDL_Rect rect = (SDL_Rect){32, 32, 600, 600};
@@ -89,10 +87,5 @@ int main(int argc, char* argv[]){
 		//trackfps(begin);
 	}
 
-	//SDL_DestroyRenderer(rend);
-	SDL_DestroyRenderer(engineRenderer);
-	SDL_DestroyWindow(engineWindow);
-
-	SDL_Quit();
-	
+	stopDemolition();
 }
