@@ -616,6 +616,9 @@ void* clickMove(void* sObj){
 
 
 void demolish(int winW, int winH, int fps){
+
+	SDL_Init(SDL_INIT_EVERYTHING);
+
 	// Setting the window and renderer
 	engineWindow = SDL_CreateWindow("Demolition Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winW, winH, 0);
 	
@@ -623,24 +626,27 @@ void demolish(int winW, int winH, int fps){
 	engineRenderer = SDL_CreateRenderer(engineWindow, -1, render_flags);
 
 	SDL_AudioSpec desiredAudioSpec;
-	engineAudioSpec = (SDL_AudioSpec*) malloc(sizeof(SDL_AudioSpec));
+	SDL_AudioSpec obtainedAudioSpec;
+	SDL_memset(&obtainedAudioSpec, 0,sizeof(obtainedAudioSpec));
 	SDL_memset(&desiredAudioSpec, 0, sizeof(desiredAudioSpec));
 	desiredAudioSpec.freq = 46000;
 	desiredAudioSpec.format = AUDIO_F32;
 	desiredAudioSpec.channels = 2;
 	desiredAudioSpec.samples = 4096;
 	desiredAudioSpec.callback = NULL;
-	engineAudio = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, engineAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+	engineAudio = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, &obtainedAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+	engineAudioSpec = (SDL_AudioSpec*) malloc(sizeof(SDL_AudioSpec));
+	*engineAudioSpec = obtainedAudioSpec;
 	//SDL_AudioInit(engineAudio);
 
 	Uint32 wav_length;
 	Uint8 *wav_buffer;
 
 	/* Load the WAV */
-	if (SDL_LoadWAV("Resources/Startup.wav", &desiredAudioSpec, &wav_buffer, &wav_length) == NULL) {
+	if (SDL_LoadWAV("Resources/Startup.wav", engineAudioSpec, &wav_buffer, &wav_length) == NULL) {
 		fprintf(stderr, "Could not open .wav file: %s\n", SDL_GetError());
 	} else {
-		
+		printf("Opened .wav file, %s\n", SDL_GetAudioDeviceName(engineAudio, false));
 		SDL_QueueAudio(engineAudio, wav_buffer, wav_length);
 	}
 
