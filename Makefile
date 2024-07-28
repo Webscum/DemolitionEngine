@@ -39,3 +39,7 @@ clean:
 	rm -f $(EXEC) $(OBJS)
 
 .PHONY: all clean
+
+force: 
+	touch main.c
+	make all

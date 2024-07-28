@@ -613,6 +613,8 @@ void* clickMove(void* sObj){
 	return NULL;
 }
 
+
+
 void demolish(int winW, int winH, int fps){
 	// Setting the window and renderer
 	engineWindow = SDL_CreateWindow("Demolition Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winW, winH, 0);
@@ -620,16 +622,27 @@ void demolish(int winW, int winH, int fps){
 	u_int32_t render_flags = SDL_RENDERER_ACCELERATED;
 	engineRenderer = SDL_CreateRenderer(engineWindow, -1, render_flags);
 
-	//SDL_AudioSpec* desiredAudioSpec;
-	//SDL_memset(desiredAudioSpec, 0, sizeof(SDL_AudioSpec))
-	//desiredAudioSpec->freq = 46000;
-	//desiredAudioSpec->format = AUDIO_F32;
-	//desiredAudioSpec->channels = 2;
-	//desiredAudioSpec->samples = 4096;
-	//desiredAudioSpec->callback = NULL
-	//engineAudio = SDL_OpenAudioDevice(NULL, 0, desiredAudioSpec, engineAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+	SDL_AudioSpec desiredAudioSpec;
+	engineAudioSpec = (SDL_AudioSpec*) malloc(sizeof(SDL_AudioSpec));
+	SDL_memset(&desiredAudioSpec, 0, sizeof(desiredAudioSpec));
+	desiredAudioSpec.freq = 46000;
+	desiredAudioSpec.format = AUDIO_F32;
+	desiredAudioSpec.channels = 2;
+	desiredAudioSpec.samples = 4096;
+	desiredAudioSpec.callback = NULL;
+	engineAudio = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, engineAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
 	//SDL_AudioInit(engineAudio);
 
+	Uint32 wav_length;
+	Uint8 *wav_buffer;
+
+	/* Load the WAV */
+	if (SDL_LoadWAV("Resources/Startup.wav", &desiredAudioSpec, &wav_buffer, &wav_length) == NULL) {
+		fprintf(stderr, "Could not open .wav file: %s\n", SDL_GetError());
+	} else {
+		
+		SDL_QueueAudio(engineAudio, wav_buffer, wav_length);
+	}
 
 	vector_init(&objectSpace);
 
@@ -652,7 +665,6 @@ void demolish(int winW, int winH, int fps){
 	SDL_SetWindowIcon(engineWindow, surface);
 	SDL_Texture* startUpTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
 	SDL_FreeSurface(surface); 
-	printf("Here now heheh\n");
 
 	framerate = fps;
 	
@@ -666,7 +678,7 @@ void demolish(int winW, int winH, int fps){
 	
 
 	for(int timeSinceOrigin = timeSince(origin); timeSinceOrigin < 3000; timeSinceOrigin = timeSince(origin)){
-		
+
 		SDL_RenderClear(engineRenderer);
 
 		if(timeSinceOrigin < 1000){
@@ -680,6 +692,13 @@ void demolish(int winW, int winH, int fps){
 
 		SDL_RenderPresent(engineRenderer);
 	}
+	
+	if(SDL_GetQueuedAudioSize(engineAudio)){
+		SDL_ClearQueuedAudio(engineAudio);
+		printf("Here!!!\n");
+		SDL_FreeWAV(wav_buffer);
+	}
+
 	SDL_DestroyTexture(startUpTexture);
 
 	return;
