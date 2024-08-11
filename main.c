@@ -49,7 +49,6 @@ int main(int argc, char* argv[]){
 
 	createAnimations(animationTest, "Resources/SpriteSheet.png", corners, frameSize, 3, (uint16_t[][2]) {{6, 100}, {7, 100}, {3, 100}});
 
-
 	//queryButtonTex(&objectCreateButton);
 	while(!exiting){
 		

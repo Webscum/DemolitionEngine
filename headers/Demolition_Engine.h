@@ -1,6 +1,7 @@
 #ifndef DEMOLITION_ENGINE_H
 #define DEMOLITION_ENGINE_H
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_error.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_stdinc.h>
@@ -594,6 +595,7 @@ void* makeObject(void* space){
 	return vectorGet(&objectSpace, vectorTotal(&objectSpace) - 1);
 }
 
+
 void moveBy(spaceObject* sObj, uint16_t vec2D[2] ){
 	SDL_Rect* objectRect = getRenderSurfaceRect(sObj);
 	printf("Move the object!\n");
@@ -642,12 +644,16 @@ void demolish(int winW, int winH, int fps){
 	Uint32 wav_length;
 	Uint8 *wav_buffer;
 
+
 	/* Load the WAV */
-	if (SDL_LoadWAV("Resources/Startup.wav", engineAudioSpec, &wav_buffer, &wav_length) == NULL) {
+	if (SDL_LoadWAV("Resources/Startup.wav", &obtainedAudioSpec, &wav_buffer, &wav_length) == NULL) {
 		fprintf(stderr, "Could not open .wav file: %s\n", SDL_GetError());
 	} else {
+
 		printf("Opened .wav file, %s\n", SDL_GetAudioDeviceName(engineAudio, false));
-		SDL_QueueAudio(engineAudio, wav_buffer, wav_length);
+		printf("Queue result : %d\n", SDL_QueueAudio(engineAudio, wav_buffer, wav_length));
+		printf("Second queue result: %d\n", SDL_QueueAudio(engineAudio, wav_buffer, wav_length));
+		SDL_PauseAudioDevice(engineAudio, 1);
 	}
 
 	vector_init(&objectSpace);
@@ -666,7 +672,7 @@ void demolish(int winW, int winH, int fps){
 	missingTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
 	SDL_FreeSurface(surface);
 
-	//Setting the window icon, we dont free it because the same image is used in startup
+	//Setting the window icon, and startup logo
 	surface = IMG_Load("Resources/AppIcon.png");
 	SDL_SetWindowIcon(engineWindow, surface);
 	SDL_Texture* startUpTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
