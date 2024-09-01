@@ -17,6 +17,7 @@
 #include "CVector.h"
 #include <limits.h>
 #include <SDL2/SDL_audio.h>
+#include <SDL2/SDL_mixer.h>
 
 // Definitions for the addresses of the missing and default textures
 char DEMOLITION_DEFAULT_TEXTURE[] = "Resources/DefaultTexture.png";
@@ -627,7 +628,7 @@ void demolish(int winW, int winH, int fps){
 	u_int32_t render_flags = SDL_RENDERER_ACCELERATED;
 	engineRenderer = SDL_CreateRenderer(engineWindow, -1, render_flags);
 
-	SDL_AudioSpec desiredAudioSpec;
+	/*SDL_AudioSpec desiredAudioSpec;
 	SDL_AudioSpec obtainedAudioSpec;
 	SDL_memset(&obtainedAudioSpec, 0,sizeof(obtainedAudioSpec));
 	SDL_memset(&desiredAudioSpec, 0, sizeof(desiredAudioSpec));
@@ -638,23 +639,16 @@ void demolish(int winW, int winH, int fps){
 	desiredAudioSpec.callback = NULL;
 	engineAudio = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, &obtainedAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
 	engineAudioSpec = (SDL_AudioSpec*) malloc(sizeof(SDL_AudioSpec));
-	*engineAudioSpec = obtainedAudioSpec;
+	*engineAudioSpec = obtainedAudioSpec;*/
 	//SDL_AudioInit(engineAudio);
 
-	Uint32 wav_length;
-	Uint8 *wav_buffer;
-
-
-	/* Load the WAV */
-	if (SDL_LoadWAV("Resources/Startup.wav", &obtainedAudioSpec, &wav_buffer, &wav_length) == NULL) {
-		fprintf(stderr, "Could not open .wav file: %s\n", SDL_GetError());
-	} else {
-
-		printf("Opened .wav file, %s\n", SDL_GetAudioDeviceName(engineAudio, false));
-		printf("Queue result : %d\n", SDL_QueueAudio(engineAudio, wav_buffer, wav_length));
-		printf("Second queue result: %d\n", SDL_QueueAudio(engineAudio, wav_buffer, wav_length));
-		SDL_PauseAudioDevice(engineAudio, 1);
-	}
+	Mix_Init(MIX_INIT_MP3 | MIX_INIT_WAVPACK);
+	Mix_OpenAudio(48000, AUDIO_F32SYS, 1, 2048);
+	Mix_Chunk* startupSound = Mix_LoadWAV("Resources/Startup.wav");
+	Mix_Chunk* laserShoot = Mix_LoadWAV("Resources/laserShoot.wav");
+	Mix_PlayChannel(1, startupSound, 0);
+	Mix_PlayChannel(2, laserShoot, 0);
+	Mix_Volume(1, 32);
 
 	vector_init(&objectSpace);
 
@@ -705,17 +699,12 @@ void demolish(int winW, int winH, int fps){
 		SDL_RenderPresent(engineRenderer);
 	}
 	
-	if(SDL_GetQueuedAudioSize(engineAudio)){
-		SDL_ClearQueuedAudio(engineAudio);
-		printf("Here!!!\n");
-		SDL_FreeWAV(wav_buffer);
-	}
+	
 
 	SDL_DestroyTexture(startUpTexture);
 
 	return;
 }
-
 void stopDemolition(){
 	SDL_DestroyRenderer(engineRenderer);
 	SDL_DestroyWindow(engineWindow);

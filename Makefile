@@ -1,10 +1,10 @@
 # A simple Makefile for compiling small SDL projects
 
 # set the compiler
-CC := clang
+CC := gcc
 
 # set the compiler flags
-CFLAGS := `sdl2-config --libs --cflags ` -ggdb3 -O0 --std=c99 -Wall -lSDL2_image -lm 
+CFLAGS := `sdl2-config --libs --cflags` -ggdb3 -O0 --std=c99 -Wall -lSDL2_image -lm -lSDL2_mixer
 # add header files here
 HDRS :=
 
@@ -27,8 +27,8 @@ glfont: glfont.c Makefile
 	$(CC) -o $@ $@.c $(CFLAGS)
 
 # recipe for building the final executable
-$(EXEC): $(OBJS) $(HDRS) Makefile
-	$(CC) -o $@ $(OBJS) $(CFLAGS)
+$(EXEC): $(SRCS) $(HDRS) Makefile
+	$(CC) $(SRCS) -o $@ $(CFLAGS)
 
 # recipe for building object files
 #$(OBJS): $(@:.o=.c) $(HDRS) Makefile

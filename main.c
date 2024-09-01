@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
-#include <SDL.h>
-#include <SDL_image.h>
 #include "headers/CVector.h"
 #include "headers/Demolition_Engine.h"
 #include "headers/Demolition_UI.h"
