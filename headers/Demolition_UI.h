@@ -40,14 +40,17 @@ int clicked(clickable* obj, void* clickableParams[3], SDL_MouseButtonEvent* but,
 	if(isInRect(&obj->dimensions, but->x, but->y)){
 		switch(but->button){
 			case SDL_BUTTON_LEFT:{
-				void* ret = obj->onMouse1(clickableParams[0]);
-				printf("%p\n", ret);
-				return 1;
+				if(obj->onMouse1){
+					obj->onMouse1(clickableParams[0]);
+					return 1;
+				}
 				break;
 			}
 			case SDL_BUTTON_RIGHT:{
-				void* ret = obj->onMouse2(clickableParams[1]);
-				return 2;
+				if(obj->onMouse2){
+					obj->onMouse2(clickableParams[1]);
+					return 2;
+				}
 				break;
 			}
 			default:{
@@ -61,10 +64,12 @@ int clicked(clickable* obj, void* clickableParams[3], SDL_MouseButtonEvent* but,
 
 void checkClicks(SDL_MouseButtonEvent* butEvent){
 	for(int clickIter = 0; clickIter < vectorTotal(&objectSpace); clickIter++){
-		renderSurface* rendSurfAttr = (renderSurface*) (getObjectAttributeFromObjectSpace(clickIter, SURFACE_INDEX)->attribute);
-		int numberGot = clicked(&rendSurfAttr->area,(void*[3]) {vectorGet(&objectSpace, clickIter), NULL,NULL}, butEvent, engineWindow);
-
-		printf("%d ", numberGot);	
+		spaceObject* objectAtIndex = getObjectFromObjectSpace(clickIter);
+		renderSurface* rendSurfAttr = (renderSurface*) (getObjectAttribute( objectAtIndex, SURFACE_INDEX)->attribute);
+		if(rendSurfAttr){
+			int numberGot = clicked(&rendSurfAttr->area,(void*[3]) {(void*) objectAtIndex, (void*) objectAtIndex,NULL}, butEvent, engineWindow);
+			printf("%d ", numberGot);
+		}
 	}
 }
 

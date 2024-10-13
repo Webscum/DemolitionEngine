@@ -103,6 +103,11 @@ typedef enum demolition_object_attribute_type{
 	ANIMATION_ATTRIBUTE,
 } demolition_objAttrType;
 
+typedef enum demolition_audio_channel_types{
+	DEMOLITION_LOCAL_AUDIO,
+	DEMOLITION_GLOBAL_AUDIO
+} demolition_audchnltp;
+
 // Makes the object clickable and gives it functions
 typedef struct{
 	SDL_Rect dimensions;
@@ -235,6 +240,11 @@ void setRenderFlag(renderSurface* rSurf, uint8_t newFlag){
 void switchRenderFlag(renderSurface* rSurf, uint8_t index){
 	switch8BitFlagBit(&rSurf->renderFlag, index);
 }
+
+typedef struct{
+	uint8_t channelCount;
+	uint8_t channels[];
+} audioEmitAttribute;
 
 typedef struct{
 	vector frames;
@@ -431,6 +441,19 @@ void freeObjectAttribute(spaceObject* sObj, uint8_t type){
 	printf("Free Attribute %d! \n", type);
 	objectAttributeTypes[type]->freeFunc(sObj);
 }
+	/*SDL_AudioSpec desiredAudioSpec;
+	SDL_AudioSpec obtainedAudioSpec;
+	SDL_memset(&obtainedAudioSpec, 0,sizeof(obtainedAudioSpec));
+	SDL_memset(&desiredAudioSpec, 0, sizeof(desiredAudioSpec));
+	desiredAudioSpec.freq = 46000;
+	desiredAudioSpec.format = AUDIO_F32;
+	desiredAudioSpec.channels = 2;
+	desiredAudioSpec.samples = 4096;
+	desiredAudioSpec.callback = NULL;
+	engineAudio = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, &obtainedAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+	engineAudioSpec = (SDL_AudioSpec*) malloc(sizeof(SDL_AudioSpec));
+	*engineAudioSpec = obtainedAudioSpec;*/
+	//SDL_AudioInit(engineAudio);
 
 void* addObjectAttribute(spaceObject* sObj, uint8_t type){
 	printf("Add attribute!\n");
@@ -473,7 +496,11 @@ renderSurface* getSurface(spaceObject* sObj){
 }
 
 SDL_Rect* getRenderSurfaceRect(spaceObject* sObj){
-	return &((clickable*) &getSurface(sObj)->area)->dimensions;
+	renderSurface* rSurf = getSurface(sObj);
+	if(rSurf)
+		return &((clickable*) &rSurf->area)->dimensions;
+	else
+		return NULL;
 }
 
 animationAttribute* getAnimationAttribute(spaceObject* sObj){
@@ -498,10 +525,6 @@ texAttr* getTextureAttribute(spaceObject* sObj){
 
 vector* getAnimationsVector(spaceObject* sObj){
 	return &(getAnimationAttribute(sObj))->animations;
-}
-
-vector* getFramesVector(spaceObject* sObj, int index){
-	return &((animation*) vectorGet(getAnimationsVector(sObj), index))->frames;
 }
 
 void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerClip[2], uint16_t frameSize[2], uint8_t animationAmount,uint16_t animationArray[][2] /*example {{3, .2},{2, .3},{5. 0}} there are 10 frames in total and this is how you get different animations from the same sprite sheet*/){
@@ -596,26 +619,40 @@ void* makeObject(void* space){
 	return vectorGet(&objectSpace, vectorTotal(&objectSpace) - 1);
 }
 
-
-void moveBy(spaceObject* sObj, uint16_t vec2D[2] ){
+void moveSpaceObjectRectangleBy(spaceObject* sObj, gVec2D vec2D ){
 	SDL_Rect* objectRect = getRenderSurfaceRect(sObj);
-	printf("Move the object!\n");
-	objectRect->x += vec2D[0];
-	objectRect->y += vec2D[1];
+	if(objectRect){
+		objectRect->x += vec2D.x;
+		objectRect->y += vec2D.y;
+	} else {
+		printf("render surface rectangle didn't exist or was inaccessible");
+	}
 }
 
-void moveTo(spaceObject* sObj, uint16_t newPos[2]){
+void moveSpaceObjectRectangleTo(spaceObject* sObj, gVec2D newPos){
 	SDL_Rect* objectRect = getRenderSurfaceRect(sObj);
-	printf("Move the object!\n");
-	objectRect->x = newPos[0];
-	objectRect->y = newPos[1];
+	if(objectRect){
+		objectRect->x = newPos.x;
+		objectRect->y = newPos.y;
+	} else {
+		printf("render surface rectangle didn't exist or was inaccessible");
+	}
+}
+
+void moveSpaceObjectBy(spaceObject* sObj, gVec2D vec2D ){
+	moveSpaceObjectRectangleBy(sObj, vec2D);
+	addToObjectCoordinates(sObj, vec2D.x, vec2D.y, 0);
+}
+
+void moveSpaceObjectTo(spaceObject* sObj, gVec2D newPos){
+	moveSpaceObjectRectangleTo(sObj, newPos);
+	setObjectCoordinates(sObj, newPos.x, newPos.y, sObj->coordinates.z);
 }
 
 void* clickMove(void* sObj){
-	moveBy((spaceObject*) sObj, (uint16_t[2]) {20,20});
-	return NULL;
+	moveSpaceObjectBy((spaceObject*) sObj, (gVec2D){20,20});
+	return sObj;
 }
-
 
 
 void demolish(int winW, int winH, int fps){
@@ -627,20 +664,6 @@ void demolish(int winW, int winH, int fps){
 	
 	u_int32_t render_flags = SDL_RENDERER_ACCELERATED;
 	engineRenderer = SDL_CreateRenderer(engineWindow, -1, render_flags);
-
-	/*SDL_AudioSpec desiredAudioSpec;
-	SDL_AudioSpec obtainedAudioSpec;
-	SDL_memset(&obtainedAudioSpec, 0,sizeof(obtainedAudioSpec));
-	SDL_memset(&desiredAudioSpec, 0, sizeof(desiredAudioSpec));
-	desiredAudioSpec.freq = 46000;
-	desiredAudioSpec.format = AUDIO_F32;
-	desiredAudioSpec.channels = 2;
-	desiredAudioSpec.samples = 4096;
-	desiredAudioSpec.callback = NULL;
-	engineAudio = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, &obtainedAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-	engineAudioSpec = (SDL_AudioSpec*) malloc(sizeof(SDL_AudioSpec));
-	*engineAudioSpec = obtainedAudioSpec;*/
-	//SDL_AudioInit(engineAudio);
 
 	Mix_Init(MIX_INIT_MP3 | MIX_INIT_WAVPACK);
 	Mix_OpenAudio(48000, AUDIO_F32SYS, 1, 2048);
