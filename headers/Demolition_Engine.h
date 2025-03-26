@@ -19,71 +19,51 @@
 #include <SDL2/SDL_audio.h>
 #include <SDL2/SDL_mixer.h>
 
-// Definitions for the addresses of the missing and default textures
-char DEMOLITION_DEFAULT_TEXTURE[] = "Resources/DefaultTexture.png";
-char DEMOLITION_MISSING_TEXTURE[] = "Resources/MissingTexture.png";
 
-int framerate;
-vector objectSpace;
-SDL_Window* engineWindow;
-SDL_Renderer* engineRenderer;
-SDL_Texture* defaultTexture;
-SDL_Texture* missingTexture;
-SDL_AudioDeviceID engineAudio;
-SDL_AudioSpec* engineAudioSpec; 
+// Definitions for the addresses of the missing and default textures
+extern const char DEMOLITION_DEFAULT_TEXTURE[];
+extern const char DEMOLITION_MISSING_TEXTURE[];
+
+extern int framerate;
+extern vector objectSpace;
+extern SDL_Window* engineWindow;
+extern SDL_Renderer* engineRenderer;
+extern SDL_Texture* defaultTexture;
+extern SDL_Texture* missingTexture;
+extern SDL_AudioDeviceID engineAudio;
+extern SDL_AudioSpec* engineAudioSpec; 
 
 // Here so they can be called and makes the users life easier and my code slicker
 // They are just the indicies that the objects attributes are at in the array containing all the object attributes
-uint8_t TEXTURE_INDEX;
-uint8_t SURFACE_INDEX;
-uint8_t ANIMATION_INDEX;
+extern uint8_t TEXTURE_INDEX;
+extern uint8_t SURFACE_INDEX;
+extern uint8_t ANIMATION_INDEX;
 
-struct spaceObjectVar;
+extern uint64_t runtime;
 
-void putb(unsigned long long n)
-{
-    char b[(sizeof n * CHAR_BIT) + 1];
-    char *p = b + sizeof b;
-    *--p = '\0';
-    for (; p-- > b;  n >>= 1) {
-        *p = '0' + (char)(n & 1);
-    }
-    puts(b);
-}
+extern uint16_t logicFrequency;
+extern uint16_t renderFrequency;
 
-int timeSince(int origin){
-	return SDL_GetTicks64() - origin;
-}
+extern int main(int argc, char** argv);
 
-void switch16BitFlagBit(uint16_t* flag, uint8_t index){
-	if(index < 16) *flag |= 1 << index;
-}
+extern void* getArg(int argIndx);
 
-void switch8BitFlagBit(uint8_t* flag, uint8_t index){
-	if(index < 8) *flag |= 1 << index;
-}
+extern void setup(uint64_t);
+extern void logicUpdate(uint64_t);
+extern void renderUpdate(uint64_t);
+extern void quit();
 
-void switch16BitFlagBits(uint16_t* flag, uint8_t indiciesLength, uint8_t indicies[]){
-	if (indicies){
-		for(int iteration = 0; iteration < indiciesLength; iteration++){
-			switch16BitFlagBit(flag, indicies[iteration]);
-		}
-	}
-	else{
-		printf("No indicies provided");
-	}
-}
+extern void putb(unsigned long long n);
 
-void switch8BitFlagBits(uint8_t* flag, uint8_t indiciesLength, uint8_t indicies[]){
-	if (indicies){
-		for(int iteration = 0; iteration < indiciesLength; iteration++){
-			switch8BitFlagBit(flag, indicies[iteration]);
-		}
-	}
-	else{
-		printf("No indicies provided");
-	}
-}
+extern int timeSince(int origin);
+
+extern void switch16BitFlagBit(uint16_t* flag, uint8_t index);
+
+extern void switch8BitFlagBit(uint8_t* flag, uint8_t index);
+
+extern void switch16BitFlagBits(uint16_t* flag, uint8_t indiciesLength, uint8_t indicies[]);
+
+extern void switch8BitFlagBits(uint8_t* flag, uint8_t indiciesLength, uint8_t indicies[]);
 
 
 // Different renderers can be used for different projects and the user can define their own
@@ -93,7 +73,7 @@ typedef enum demolition_renderer{
 	VULKAN,
 	CUSTOM,
 } demolition_renderer;
-demolition_renderer selectedRenderer;
+extern demolition_renderer selectedRenderer;
 
 
 // Deprecated, don't use
@@ -103,33 +83,45 @@ typedef enum demolition_object_attribute_type{
 	ANIMATION_ATTRIBUTE,
 } demolition_objAttrType;
 
-typedef enum demolition_audio_channel_types{
+typedef enum demolition_audio_type{
 	DEMOLITION_LOCAL_AUDIO,
 	DEMOLITION_GLOBAL_AUDIO
-} demolition_audchnltp;
+} demolition_aud_tp;
+
+extern vector loadedAudios;
+extern float masterVolume;
+extern int lastAudioChannel;
+extern const int constantChannels;
+
+extern int playAudio(char* audioFile, demolition_aud_tp audioType);
+extern int playAudioConstant(char* audioFile, demolition_aud_tp audioType);
+extern void playAudioConstantFromIndex(int index, demolition_aud_tp audioType);
+extern void playAudioFromIndex(int index, demolition_aud_tp audioType);
+extern int loadAudio(char* audioFile);
+extern void stopConstantAudio(int channel);
+extern void setChannelVolume(int channel, float volume);
+extern void setChannelRangeVolume(int firstChannel, int lastChannel, float volume);
+extern void setMasterVolume(float volume);
+extern void playRepeatedAudioFromIndex(int index, demolition_aud_tp audioType, int repeats);
+extern int playRepeatedAudio(char* audioFile, demolition_aud_tp audioType, int repeats);
+extern void startAllAudios();
+extern void stopAllAudios();
+extern void startAudio(int);
+extern void stopAudio(int);
 
 // Makes the object clickable and gives it functions
 typedef struct{
 	SDL_Rect dimensions;
+	bool clicked;
 	void* (*onMouse1) (void*);
 	void* (*onMouse2) (void*);
 } clickable;
 
-SDL_Rect getClickableRect(clickable* c){
-	return c->dimensions;
-}
+extern SDL_Rect getClickableRect(clickable* c);
 
-void setClickableRect(clickable* c, SDL_Rect r){
-	c->dimensions = r;
-}
+extern void setClickableRect(clickable* c, SDL_Rect r);
 
-void  addToClickableRect(clickable* c, SDL_Rect r){
-	SDL_Rect cr = c->dimensions;
-	cr.x += r.x;
-	cr.y += r.y;
-	cr.w += r.w;
-	cr.h += r.h;
-}
+extern void  addToClickableRect(clickable* c, SDL_Rect r);
 
 typedef struct geometryVector2D{
 	double x, y;
@@ -140,6 +132,7 @@ typedef struct geometryVector3D{
 } gVec3D;
 
 // Space object and Attributes defenition here
+
 typedef struct spaceObjectVar{
 	uint16_t objIdent; // Display value in hexadecimal beacause easier to identify
 	gVec3D coordinates;
@@ -150,53 +143,25 @@ typedef struct spaceObjectVar{
 } spaceObject;
 
 // BEGIN HERE!
-gVec3D* getObjectCoordinates(spaceObject* sObj){
-	return  &sObj->coordinates;
-}
+extern gVec3D* getObjectCoordinates(spaceObject* sObj);
 
-void setObjectCoordinates(spaceObject* sObj, double x, double y, double z){
-	gVec3D* objectCoordinates = &sObj->coordinates;
-	objectCoordinates->x = x;
-	objectCoordinates->y = y;
-	objectCoordinates->z = z;
-}
+extern void setObjectCoordinates(spaceObject* sObj, double x, double y, double z);
 
-void addToObjectCoordinates(spaceObject* sObj, double x, double y, double z){
-	gVec3D* objectCoordinates = &sObj->coordinates;
-	objectCoordinates->x += x;
-	objectCoordinates->y += y;
-	objectCoordinates->z += z;
-}
+extern void addToObjectCoordinates(spaceObject* sObj, double x, double y, double z);
 
-void setObjectCoordinatesWithVector(spaceObject* sObj, gVec3D newCoords){
-	sObj->coordinates = newCoords;
-}
+extern void setObjectCoordinatesWithVector(spaceObject* sObj, gVec3D newCoords);
 
-void addToObjectCoordinatesWithVector(spaceObject* sObj, gVec3D newCoords){
-	addToObjectCoordinates(sObj, newCoords.x, newCoords.y, newCoords.z);
-}
+extern void addToObjectCoordinatesWithVector(spaceObject* sObj, gVec3D newCoords);
 
-void swapObjectCoordinates(spaceObject* firstObj, spaceObject* secondObj){
-	gVec3D firstCoords = firstObj->coordinates;
-	firstObj->coordinates = secondObj->coordinates;
-	secondObj->coordinates = firstCoords;
-}
+extern void swapObjectCoordinates(spaceObject* firstObj, spaceObject* secondObj);
 
-void setObjectFlag(spaceObject* sObj, uint16_t newFlag){
-	sObj->objectFlag = newFlag;
-}
+extern void setObjectFlag(spaceObject* sObj, uint16_t newFlag);
 
-void switchObjectFlagBit(spaceObject* sObj, uint8_t index){
-	switch16BitFlagBit(&sObj->objectFlag, index);
-}
+extern void switchObjectFlagBit(spaceObject* sObj, uint8_t index);
 
-void switchObjectFlagBits(spaceObject* sObj, uint8_t indiciesLength, uint8_t indicies[]){
-	switch16BitFlagBits(&sObj->objectFlag, indiciesLength, indicies);
-}
+extern void switchObjectFlagBits(spaceObject* sObj, uint8_t indiciesLength, uint8_t indicies[]);
 
-uint16_t getObjectFlag(spaceObject* sObj){
-	return sObj->objectFlag;
-}
+extern uint16_t getObjectFlag(spaceObject* sObj);
 
 typedef struct objectTextureAttribute{
 	SDL_Texture* tex;
@@ -204,42 +169,26 @@ typedef struct objectTextureAttribute{
 	uint8_t textureFlag;
 } texAttr;
 
-void setTextureLocation(texAttr* tAttr, char* newLocation){
-	tAttr->textureLocation = newLocation;
-}
+extern void setTextureLocation(texAttr* tAttr, char* newLocation);
 
-void setTexture(texAttr* tAttr, SDL_Texture* newTex){
-	tAttr->tex = newTex;
-}
+extern void setTexture(texAttr* tAttr, SDL_Texture* newTex);
 
-void switchTextureFlagBit(texAttr* tAttr, uint8_t index){
-	switch8BitFlagBit(&tAttr->textureFlag, index);
-}
+extern void switchTextureFlagBit(texAttr* tAttr, uint8_t index);
 
-void switchTextureFlagBits(texAttr* tAttr, uint8_t indiciesLength, uint8_t indicies[]){
-	switch8BitFlagBits(&tAttr->textureFlag, indiciesLength, indicies);
-}
+extern void switchTextureFlagBits(texAttr* tAttr, uint8_t indiciesLength, uint8_t indicies[]);
 
 typedef struct{
 	clickable area; //Clickable is used for rendering to the clickable area
 	uint8_t renderFlag; // renderFlag for user customization
 }renderSurface;
 
-clickable* getRenderSurfaceClickable(renderSurface* rSurf){
-	return &rSurf->area;
-}
+extern clickable* getRenderSurfaceClickable(renderSurface* rSurf);
 
-void setRenderSurfaceAreaSize(renderSurface* rSurf, SDL_Rect newSize){
-	setClickableRect(getRenderSurfaceClickable(rSurf), newSize); 
-}
+extern void setRenderSurfaceAreaSize(renderSurface* rSurf, SDL_Rect newSize);
 
-void setRenderFlag(renderSurface* rSurf, uint8_t newFlag){
-	rSurf->renderFlag = newFlag;
-}
+extern void setRenderFlag(renderSurface* rSurf, uint8_t newFlag);
 
-void switchRenderFlag(renderSurface* rSurf, uint8_t index){
-	switch8BitFlagBit(&rSurf->renderFlag, index);
-}
+extern void switchRenderFlag(renderSurface* rSurf, uint8_t index);
 
 typedef struct{
 	uint8_t channelCount;
@@ -261,19 +210,9 @@ typedef struct{
 	uint8_t animationFlag;
 } animationAttribute;
 
-uint8_t getAnimationCount(animationAttribute* animAttr){
-	return animAttr->animationCount;
-}
+extern uint8_t getAnimationCount(animationAttribute* animAttr);
 
-void setSelectedAnimation(animationAttribute* animAttr, uint8_t newAnim){
-	if(newAnim < getAnimationCount(animAttr)){
-		((animation*) vectorGet(&animAttr->animations, animAttr->selectedAnimation))->currentFrame = 0;
-		animAttr->selectedAnimation = newAnim;
-	}
-	else{
-		printf("Provided animation index not available!\n");
-	}
-}
+extern void setSelectedAnimation(animationAttribute* animAttr, uint8_t newAnim);
 
 
 typedef struct{
@@ -291,450 +230,87 @@ typedef struct object_Attribute_Type_ID{
 	void (*freeFunc) (spaceObject* spaceObj);
 } objAttrTypeID;
 
-objAttrTypeID* objectAttributeTypes[128];
+extern objAttrTypeID* objectAttributeTypes[128];
 
 
-spaceObject* getObjectFromObjectSpace(uint16_t index){
-	return (spaceObject*) vectorGet(&objectSpace, index);
-}
+extern spaceObject* getObjectFromObjectSpace(uint16_t index);
 
-int deleteFromObjSpace(uint16_t index){
-	for(int objIndx = index; objIndx < vectorTotal(&objectSpace); objIndx++){
-		((spaceObject*) vectorGet(&objectSpace, objIndx))->objIdent--;
-	}
-	return vectorDelete(&objectSpace, index);
-}
+extern int deleteFromObjSpace(uint16_t index);
 
-void* defaultClick(){
-	printf("defaultClick!");
-	return NULL;
-}
+extern void* defaultClick();
 
-int createObjAttribute(void* (*addFunc) (spaceObject* sObj, uint8_t type), void (*freeFunc) (spaceObject* attrObj)){
-	static uint8_t attributeAmount;
+extern uint8_t createObjAttribute(void* (*addFunc) (spaceObject* sObj, uint8_t type), void (*freeFunc) (spaceObject* attrObj));
 
-	if(attributeAmount >= 255){
-		printf("There are too many attributes defined!");
-		return 255;
-	}
-	objAttrTypeID* objATID = (objAttrTypeID*) malloc(sizeof(objAttrTypeID));
-	*objATID = (objAttrTypeID) {attributeAmount, addFunc, freeFunc};
-	objectAttributeTypes[attributeAmount] = objATID;
-	attributeAmount++;
-	return attributeAmount - 1;
-}
+extern objectAttribute* getObjectAttribute(spaceObject* obj, uint8_t type);
 
-objectAttribute* getObjectAttribute(spaceObject* obj, uint8_t type){
-	for(int i = 0; vectorTotal(&obj->attributes) > i; i++){
-		objectAttribute* objAttr = (objectAttribute*) vectorGet(&obj->attributes, i);
-		if(objAttr->typeID == type) return objAttr;
-	}
-	return NULL;
-}
-
-objectAttribute* getObjectAttributeFromObjectSpace(uint16_t indexOfObject, uint8_t type){
-	return getObjectAttribute(getObjectFromObjectSpace(indexOfObject), type);
-}
+extern objectAttribute* getObjectAttributeFromObjectSpace(uint16_t indexOfObject, uint8_t type);
 
 // Here are the add and free functions for the general attributes,the attribute definitions are in the demolish() function
 
-void* addTexture(spaceObject* sObj, uint8_t type){
-	objectAttribute* attr; 
-	texAttr* tAttr;
+extern void* addTexture(spaceObject* sObj, uint8_t type);
 
-	attr = (objectAttribute*) malloc(sizeof(objectAttribute));
-	tAttr = (texAttr*) malloc(sizeof(texAttr));
+extern void freeTexture(spaceObject* sObj);
 
-	tAttr->tex = defaultTexture;
-	tAttr->textureLocation = DEMOLITION_DEFAULT_TEXTURE;
-	attr->typeID = type;
-	attr->attribute = (void*) tAttr;
-	
-	vectorPushBack(&sObj->attributes, (void*) attr);
+extern void* addObjectAttribute(spaceObject *sObj, uint8_t type);
 
-	printf("Texture Added!\n");
+extern void* clickDemolish(void*);
 
-	return (void*) tAttr;
-}
+extern void* clickMove(void*);
 
-void freeTexture(spaceObject* sObj){
-	objectAttribute* objAttr = getObjectAttribute(sObj, TEXTURE_INDEX);
-	texAttr* realAttribute = (texAttr*) objAttr->attribute;
+extern void* addSurface(spaceObject* sObj, uint8_t type);
 
-	if (strcmp(realAttribute->textureLocation, DEMOLITION_DEFAULT_TEXTURE) && strcmp(realAttribute->textureLocation, DEMOLITION_MISSING_TEXTURE) && !getObjectAttribute(sObj, ANIMATION_INDEX)){
-		SDL_DestroyTexture(realAttribute->tex);
-	}
-	free(realAttribute);
-	free(objAttr);
-	
-}
+extern void freeSurface(spaceObject* sObj);
 
-void* addObjectAttribute(spaceObject *sObj, uint8_t type);
-void* clickDemolish(void*);
-void* clickMove(void*);
+extern void* addAnimation(spaceObject* sObj, uint8_t type);
 
-void* addSurface(spaceObject* sObj, uint8_t type){
+extern void freeAnimation(spaceObject* sObj);
 
-	objectAttribute* attr;
-	renderSurface* rSurf;
+extern void freeObjectAttribute(spaceObject* sObj, uint8_t type);
 
-	attr = (objectAttribute*) malloc(sizeof(objectAttribute));
-	rSurf = (renderSurface*) malloc(sizeof(renderSurface));
+extern void* addObjectAttribute(spaceObject* sObj, uint8_t type);
 
+extern void demolishObject(spaceObject* sObj);
 
-	rSurf->area.dimensions = (SDL_Rect){(int)sObj->coordinates.x, (int)sObj->coordinates.y+(100*vectorTotal(&objectSpace)), 100, 100};
-	rSurf->area.onMouse1 = clickDemolish;
-	rSurf->area.onMouse2 = clickMove;
-	attr->typeID = type;
-	attr->attribute = (void*) rSurf;
-	if(!getObjectAttribute(sObj, TEXTURE_INDEX)) addObjectAttribute(sObj, TEXTURE_INDEX);
-	vectorPushBack(&sObj->attributes, attr);
+extern void freeChildren(spaceObject* sObj);
 
-	printf("Render Surface Added!\n");
+extern void demolishObject(spaceObject* sObj);
 
-	return (void*) rSurf;
-}
+extern renderSurface* getSurface(spaceObject* sObj);
 
-void freeSurface(spaceObject* sObj){
-	//renderSurface* realAttribute = (renderSurface*)objAttr->attribute;
-	objectAttribute* objAttr= getObjectAttribute(sObj, SURFACE_INDEX);
-	free(objAttr->attribute);
-	free(objAttr);
-}
+extern SDL_Rect* getRenderSurfaceRect(spaceObject* sObj);
 
-void* addAnimation(spaceObject* sObj, uint8_t type){
-	objectAttribute* attr;
-	animationAttribute* anim;
-	attr = (objectAttribute*) malloc(sizeof(objectAttribute));
-	anim = (animationAttribute*) malloc(sizeof(animationAttribute));
+extern animationAttribute* getAnimationAttribute(spaceObject* sObj);
 
-	attr->typeID = type;
-	attr->attribute = anim;
-	if(!getObjectAttribute(sObj, SURFACE_INDEX)) addObjectAttribute(sObj, SURFACE_INDEX);
+extern texAttr* getTextureAttribute(spaceObject* sObj);
 
-	vector_init(&anim->animations);
+extern vector* getAnimationsVector(spaceObject* sObj);
 
-	vectorPushBack(&sObj->attributes, attr);
+/*example for animationArray parameter: {{3, 200},{2, 300},{5. 45}}, the first is the amount of frames and the second is the time in milliseconds a frame stays and this is how you get different animations from the same sprite sheet*/
+extern void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerClip[2], uint16_t frameSize[2], uint8_t animationAmount,uint16_t animationArray[][2] );
 
-	printf("Animation added!\n");
+extern void animateObject(animationAttribute* animAttr, texAttr* texture, int time);
 
-	return (void*) anim;
-}
-
-void freeAnimation(spaceObject* sObj){
-	objectAttribute* objAttr = getObjectAttribute(sObj, ANIMATION_INDEX);
-	animationAttribute* animAttr = (animationAttribute*) objAttr->attribute;
-	for(int animationIndex = 0; animationIndex < vectorTotal(&animAttr->animations); animationIndex++){
-		animation* anim = (animation*) vectorGet(&animAttr->animations, animationIndex);
-		for(int frameIndex = 0; frameIndex < vectorTotal(&anim->frames); frameIndex++){
-			SDL_DestroyTexture((SDL_Texture*) vectorGet(&anim->frames, frameIndex));
-		}
-		vectorFree(&anim->frames);
-	}
-
-	vectorFree(&animAttr->animations);
-	free(animAttr);
-	free(objAttr);
-}
-
-void freeObjectAttribute(spaceObject* sObj, uint8_t type){
-	printf("Free Attribute %d! \n", type);
-	objectAttributeTypes[type]->freeFunc(sObj);
-}
-	/*SDL_AudioSpec desiredAudioSpec;
-	SDL_AudioSpec obtainedAudioSpec;
-	SDL_memset(&obtainedAudioSpec, 0,sizeof(obtainedAudioSpec));
-	SDL_memset(&desiredAudioSpec, 0, sizeof(desiredAudioSpec));
-	desiredAudioSpec.freq = 46000;
-	desiredAudioSpec.format = AUDIO_F32;
-	desiredAudioSpec.channels = 2;
-	desiredAudioSpec.samples = 4096;
-	desiredAudioSpec.callback = NULL;
-	engineAudio = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, &obtainedAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-	engineAudioSpec = (SDL_AudioSpec*) malloc(sizeof(SDL_AudioSpec));
-	*engineAudioSpec = obtainedAudioSpec;*/
-	//SDL_AudioInit(engineAudio);
-
-void* addObjectAttribute(spaceObject* sObj, uint8_t type){
-	printf("Add attribute!\n");
-	return objectAttributeTypes[type]->addFunc(sObj, type);
-}
-
-void demolishObject(spaceObject* sObj);
-
-void freeChildren(spaceObject* sObj){
-	for (int i = 0; i < vectorTotal(&sObj->children); i++){
-		spaceObject* child = (spaceObject*)vectorGet(&sObj->children,i);
-		demolishObject(child);
-	}
-}
-
-void demolishObject(spaceObject* sObj){
-	
-	if(deleteFromObjSpace(sObj->objIdent) == UNDEFINE){
-		printf("Deletion of object unsuccesful!\n");
-		return;
-	}
-
-
-	freeChildren(sObj);
-	for(int i = 0; vectorTotal(&sObj->attributes) > i; i++){
-		objectAttribute* objAttr = (objectAttribute*) vectorGet(&sObj->attributes, i);
-		freeObjectAttribute(sObj, objAttr->typeID);
-	}
-	free(sObj);
-}
-
-renderSurface* getSurface(spaceObject* sObj){
-	objectAttribute* objAttr = getObjectAttribute(sObj, SURFACE_INDEX);
-	if(objAttr){
-		return (renderSurface*) objAttr->attribute;
-	}
-	else{
-		return NULL;
-	}
-}
-
-SDL_Rect* getRenderSurfaceRect(spaceObject* sObj){
-	renderSurface* rSurf = getSurface(sObj);
-	if(rSurf)
-		return &((clickable*) &rSurf->area)->dimensions;
-	else
-		return NULL;
-}
-
-animationAttribute* getAnimationAttribute(spaceObject* sObj){
-	objectAttribute* objAttr = getObjectAttribute(sObj, ANIMATION_INDEX);
-	if(objAttr){
-		return (animationAttribute*) objAttr->attribute;
-	}
-	else{
-		return NULL;
-	}
-}
-
-texAttr* getTextureAttribute(spaceObject* sObj){
-	objectAttribute* objAttr = getObjectAttribute(sObj, TEXTURE_INDEX);
-	if(objAttr){
-		return (texAttr*) objAttr->attribute;
-	}
-	else{
-		return NULL;
-	}
-}
-
-vector* getAnimationsVector(spaceObject* sObj){
-	return &(getAnimationAttribute(sObj))->animations;
-}
-
-void createAnimations(spaceObject* sObj, char* imageLocation, uint16_t cornerClip[2], uint16_t frameSize[2], uint8_t animationAmount,uint16_t animationArray[][2] /*example {{3, .2},{2, .3},{5. 0}} there are 10 frames in total and this is how you get different animations from the same sprite sheet*/){
-	SDL_Surface* srcSurface = IMG_Load(imageLocation);
-	SDL_Rect clip = {cornerClip[0], cornerClip[1], frameSize[0], frameSize[1]};
-	SDL_Rect* destRect = getRenderSurfaceRect(sObj);
-	const SDL_Rect ogDestRect = *destRect;
-	SDL_Surface* destSurface = SDL_CreateRGBSurface(0, destRect->w, destRect->h, 32, 0, 0, 0, 0);
-
-	uint8_t framesPerRow = (srcSurface->w - cornerClip[0] * 2) / frameSize[0];
-	uint8_t row = 0;
-	uint8_t column = 0;
-
-	animationAttribute* animAttr = getAnimationAttribute(sObj);
-	animAttr->animationCount = animationAmount;
-	getTextureAttribute(sObj)->textureLocation = imageLocation;
-
-
-
-
-	for (int animIndex= 0; animationAmount > animIndex; animIndex++) {
-		animation* anim;
-		anim = (animation*) malloc(sizeof(animation));
-		vector_init(&anim->frames);
-		vectorPushBack(getAnimationsVector(sObj), (void*) anim);
-		for (int frameIndex= 0; frameIndex < animationArray[animIndex][0]; frameIndex++) {
-			//printf("frame: %d\n", frameIndex); // Starts to trip out somewhere after here!, fix tomorrow!
-			
-			destSurface->w = clip.w, destSurface->h = clip.h;
-			destRect->w = clip.w, destRect->h = clip.h;
-			SDL_BlitSurface(srcSurface, &clip, destSurface, destRect);
-			SDL_Texture* surfTex = SDL_CreateTextureFromSurface(engineRenderer, destSurface);
-			SDL_QueryTexture(surfTex, NULL, NULL, &destRect->w, &destRect->h);
-			destSurface->w = ogDestRect.w, destSurface->h = ogDestRect.h;
-			destRect->w = ogDestRect.w, destRect->h = ogDestRect.h;
-			vectorPushBack(&anim->frames, (void*) surfTex);
-
-			column++;
-			if(column >= framesPerRow){
-				row++;
-				column %= framesPerRow;
-			}
-
-			clip.x = cornerClip[0] + frameSize[0]*column;
-			clip.y = cornerClip[1] + frameSize[1]*row;
-		}
-
-		if(animationArray[animIndex][1]){
-			printf("Animation has Duration\n");
-			anim->duration = animationArray[animIndex][1];
-		}
-		else{
-			printf("Animation is Manual\n");
-			anim->manual = true;
-		}
-	}
-	SDL_FreeSurface(destSurface);
-	SDL_FreeSurface(srcSurface);
-	animAttr->lastSwap = SDL_GetTicks64();
-}
-
-void animateObject(animationAttribute* animAttr, texAttr* texture, int time){
-	animation* anim = (animation*) vectorGet(&animAttr->animations, animAttr->selectedAnimation);
-	if(anim->manual || time - animAttr->lastSwap >= anim->duration){
-		texture->tex = (SDL_Texture*) vectorGet(&anim->frames, ++anim->currentFrame % vectorTotal(&anim->frames));
-		animAttr->lastSwap = time;
-	}
-}
-
-void* clickDemolish(void* spcObj){
-	printf("Click demolish!\n");
-	demolishObject((spaceObject*) spcObj);
-	return NULL;
-}
+extern void* clickDemolish(void* spcObj);
 
 // to set attributes of objects
-void setAttribute(spaceObject* sObj, uint8_t type, void* newAttr){
-	objectAttribute* objAttr = getObjectAttribute(sObj, type);
-	freeObjectAttribute(sObj, type);
-	objAttr->attribute = newAttr;
-}
+extern void setAttribute(spaceObject* sObj, uint8_t type, void* newAttr);
 
-void* makeObject(void* space){
-	spaceObject* spcObj;
-	spcObj = (spaceObject*) malloc(sizeof(spaceObject));
-	spcObj->objIdent = vectorTotal(&objectSpace);
-	vector_init(&spcObj->attributes); 
-	renderSurface* rSurf = (renderSurface*) addObjectAttribute(spcObj, SURFACE_INDEX);
-	vectorPushBack(((vector*) space), (void*) spcObj);
-	setObjectCoordinates(spcObj, 0.0, 0.0, 1.0);
-	printf("createObject!\n");
-	return vectorGet(&objectSpace, vectorTotal(&objectSpace) - 1);
-}
+extern void* makeObject(void* space);
 
-void moveSpaceObjectRectangleBy(spaceObject* sObj, gVec2D vec2D ){
-	SDL_Rect* objectRect = getRenderSurfaceRect(sObj);
-	if(objectRect){
-		objectRect->x += vec2D.x;
-		objectRect->y += vec2D.y;
-	} else {
-		printf("render surface rectangle didn't exist or was inaccessible");
-	}
-}
+extern void moveSpaceObjectRectangleBy(spaceObject* sObj, gVec2D vec2D );
 
-void moveSpaceObjectRectangleTo(spaceObject* sObj, gVec2D newPos){
-	SDL_Rect* objectRect = getRenderSurfaceRect(sObj);
-	if(objectRect){
-		objectRect->x = newPos.x;
-		objectRect->y = newPos.y;
-	} else {
-		printf("render surface rectangle didn't exist or was inaccessible");
-	}
-}
+extern void moveSpaceObjectRectangleTo(spaceObject* sObj, gVec2D newPos);
 
-void moveSpaceObjectBy(spaceObject* sObj, gVec2D vec2D ){
-	moveSpaceObjectRectangleBy(sObj, vec2D);
-	addToObjectCoordinates(sObj, vec2D.x, vec2D.y, 0);
-}
+extern void moveSpaceObjectBy(spaceObject* sObj, gVec2D vec2D );
 
-void moveSpaceObjectTo(spaceObject* sObj, gVec2D newPos){
-	moveSpaceObjectRectangleTo(sObj, newPos);
-	setObjectCoordinates(sObj, newPos.x, newPos.y, sObj->coordinates.z);
-}
+extern void moveSpaceObjectTo(spaceObject* sObj, gVec2D newPos);
 
-void* clickMove(void* sObj){
-	moveSpaceObjectBy((spaceObject*) sObj, (gVec2D){20,20});
-	return sObj;
-}
+extern void* clickMove(void* sObj);
 
 
-void demolish(int winW, int winH, int fps){
+extern void demolish(int winW, int winH, int fps);
 
-	SDL_Init(SDL_INIT_EVERYTHING);
-
-	// Setting the window and renderer
-	engineWindow = SDL_CreateWindow("Demolition Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winW, winH, 0);
-	
-	u_int32_t render_flags = SDL_RENDERER_ACCELERATED;
-	engineRenderer = SDL_CreateRenderer(engineWindow, -1, render_flags);
-
-	Mix_Init(MIX_INIT_MP3 | MIX_INIT_WAVPACK);
-	Mix_OpenAudio(48000, AUDIO_F32SYS, 1, 2048);
-	Mix_Chunk* startupSound = Mix_LoadWAV("Resources/Startup.wav");
-	Mix_Chunk* laserShoot = Mix_LoadWAV("Resources/laserShoot.wav");
-	Mix_PlayChannel(1, startupSound, 0);
-	Mix_PlayChannel(2, laserShoot, 0);
-	Mix_Volume(1, 32);
-
-	vector_init(&objectSpace);
-
-	TEXTURE_INDEX = createObjAttribute(addTexture, freeTexture);
-	SURFACE_INDEX = createObjAttribute(addSurface, freeSurface);
-	ANIMATION_INDEX = createObjAttribute(addAnimation, freeAnimation);
-
-	//Setting Default Texture Value, could have used initTex but Demolition_Visual isn't compiled yet
-	SDL_Surface* surface;
-	surface = IMG_Load("Resources/DefaultTexture.png");
-	defaultTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
-	SDL_FreeSurface(surface);
-
-	surface = IMG_Load("Resources/MissingTexture.png");
-	missingTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
-	SDL_FreeSurface(surface);
-
-	//Setting the window icon, and startup logo
-	surface = IMG_Load("Resources/AppIcon.png");
-	SDL_SetWindowIcon(engineWindow, surface);
-	SDL_Texture* startUpTexture = SDL_CreateTextureFromSurface(engineRenderer, surface);
-	SDL_FreeSurface(surface); 
-
-	framerate = fps;
-	
-	printf("Demolition Engine Working!\n");
-
-	int cubeSide = winH < winW ? winH / 4 * 3 : winW / 4 * 3;
-
-	SDL_Rect demolitionStartUpRectangle = {(winW - cubeSide) / 2, (winH - cubeSide) / 2, cubeSide, cubeSide};
-
-	int origin = SDL_GetTicks64();
-	
-
-	for(int timeSinceOrigin = timeSince(origin); timeSinceOrigin < 3000; timeSinceOrigin = timeSince(origin)){
-
-		SDL_RenderClear(engineRenderer);
-
-		if(timeSinceOrigin < 1000){
-			SDL_SetTextureAlphaMod(startUpTexture, 255 * (timeSinceOrigin/1000.0 + 0.001));
-		}
-		else{
-			SDL_SetTextureAlphaMod(startUpTexture, 255 * (1.0 - ((timeSinceOrigin-1000) / 2000.0)));
-		}
-
-		SDL_RenderCopy(engineRenderer, startUpTexture, NULL, &demolitionStartUpRectangle);
-
-		SDL_RenderPresent(engineRenderer);
-	}
-	
-	
-
-	SDL_DestroyTexture(startUpTexture);
-
-	return;
-}
-void stopDemolition(){
-	SDL_DestroyRenderer(engineRenderer);
-	SDL_DestroyWindow(engineWindow);
-	SDL_Quit();
-	printf("Stop the demolition!!!\n");
-	return;
-}
+extern void stopDemolition();
 
 
 #endif

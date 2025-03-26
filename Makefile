@@ -4,12 +4,12 @@
 CC := gcc
 
 # set the compiler flags
-CFLAGS := `sdl2-config --libs --cflags` -ggdb3 -O0 --std=c99 -Wall -lSDL2_image -lm -lSDL2_mixer
+CFLAGS := `sdl2-config --libs --cflags` -ggdb3 -O0 --std=c99 -Wall -lSDL2_image -lm -lSDL2_mixer -fpic
 # add header files here
 HDRS :=
 
 # add source files here
-SRCS := main.c
+SRCS := *.c
 
 # generate names of object files
 OBJS := $(SRCS:.c=.o)
@@ -41,5 +41,5 @@ clean:
 .PHONY: all clean
 
 force: 
-	touch main.c
+	touch *.c
 	make all

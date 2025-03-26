@@ -1,91 +1,23 @@
-//#include <cstdint>
-#include <limits.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <time.h>
-#include "headers/CVector.h"
 #include "headers/Demolition_Engine.h"
-#include "headers/Demolition_UI.h"
-#include "headers/Demolition_Visual.h"
+#include "headers/Demolition_Physics.h"
+#include <stdio.h>
 
-// The extensibility of this engine should be improved!!!!!!
-
-int main(int argc, char* argv[]){
-
-	char* inputFile = argc > 4 ? argv[1] : NULL;
-	if(!(inputFile)){
-		printf("Not enough arguments!\n");
-		return 1;
-	}
-	
-	FILE* file = fopen(inputFile, "r+");
-	
-	if (!file){
-		perror ("Error opening file\n");
-		return 1; 
-	}
+uint16_t physicsFrequency = 30;
+uint16_t renderFrequency = 60;
+uint16_t logicFrequency = 120;
 
 
-	demolish(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
-	
-	bool exiting = false;	
-	float UpdateFreq  =  1000.0 / framerate;
-	int begin = SDL_GetTicks64();
+int newAudioIndex = -1;
 
-	demolition_button objectCreateButton = {
-		{{300, 20, 100, 100}, makeObject},
-		{defaultTexture, DEMOLITION_DEFAULT_TEXTURE}
-	};
-
-	spaceObject* animationTest = (spaceObject*) makeObject(&objectSpace);
-
-	animationAttribute* animAttr = (animationAttribute*) addObjectAttribute(animationTest, ANIMATION_INDEX);
-
-	uint16_t corners[2] = {0,0};
-	uint16_t frameSize[2] = {1, 1};
-
-	createAnimations(animationTest, "Resources/SpriteSheet.png", corners, frameSize, 3, (uint16_t[][2]) {{6, 100}, {7, 100}, {3, 100}});
-
-	
-
-	//queryButtonTex(&objectCreateButton);
-	while(!exiting){
-		
-		begin = SDL_GetTicks64();
-		bool attributes = false;
-		SDL_Event event;
-
-		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
-				case SDL_QUIT:{
-					exiting = 1;
-					break;
-				}
-				case SDL_MOUSEBUTTONDOWN:{
-					void* funcParams[3] =  {(void*) &objectSpace, NULL, NULL};
-					printf("%d\n", clicked(&objectCreateButton.c, funcParams, &event.button, engineWindow));
-					checkClicks(&event.button);
-					printf("\n");
-					break;
-				}
-			}
-
-		}
-
-		SDL_RenderClear(engineRenderer);
-		RenderScene();
-		//SDL_Rect rect = (SDL_Rect){32, 32, 600, 600};
-		//renderSingleTexture( getTextureAttribute(animationTest)->tex, &rect);
-
-		//move(animationTest, (uint16_t[2]) {500, 500});
-		RenderButton(&objectCreateButton);
-		//RenderDemolitionUI();
-		SDL_RenderPresent(engineRenderer);
-		//SDL_Delay(UpdateFreq);
-		//trackfps(begin);
-	}
-
-	stopDemolition();
+void setup(uint64_t startTime){
+	printf("Setup function!\n");
 }
 
+void logicUpdate(uint64_t time){
+	//if (newAudioIndex == -1) newAudioIndex = playAudioConstant("Resources/laserShoot.wav", DEMOLITION_LOCAL_AUDIO);
+	//else playAudioConstantFromIndex(newAudioIndex, DEMOLITION_LOCAL_AUDIO);
+}
+
+void quit(){
+	printf("Quit function!\n");
+}

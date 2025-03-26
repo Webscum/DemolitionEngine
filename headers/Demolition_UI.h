@@ -1,14 +1,10 @@
-#ifndef DEMOLITION_ENGINE_H
-#include "Demolition_Engine.h"
-#endif
-
-
 #ifndef DEMOLITION_ENGINE_UI_H
 #define DEMOLITION_ENGINE_UI_H
 #include <SDL.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
+#include "Demolition_Engine.h"
 
 typedef enum demolition_screen_section_enum{
 	DEMOLITION_SCENE,

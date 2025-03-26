@@ -1,10 +1,7 @@
-#ifndef DEMOLITION_ENGINE_H
-#include "Demolition_Engine.h"
-#endif
-
 #ifndef DEMOLITION_ENGINE_VISUAL_H
 #define DEMOLITION_ENGINE_VISUAL_H
-#include <SDL_image.h>
+#include "Demolition_Engine.h"
+#include <SDL2/SDL_image.h>
 // Create palette to use in coloring the UI
 
 SDL_Color colors[] = {{0, 255, 246, 255}, {0, 231, 255, 255}, {0, 158, 255, 255}, {0, 20, 255, 255}};
@@ -16,12 +13,6 @@ void initTex(SDL_Texture* texAddr, SDL_Rect* dest,char* fileLocation){
 	texAddr = SDL_CreateTextureFromSurface(engineRenderer, surface);
 	SDL_FreeSurface(surface);
 	SDL_QueryTexture(texAddr, NULL, NULL, &dest->w, &dest->h);
-}
-
-void setTexutre(spaceObject* sObj, SDL_Texture* givenTexture, char* givenTextureLocation){
-	texAttr* objAttr = (texAttr*) getObjectAttribute(sObj, TEXTURE_INDEX)->attribute;
-	objAttr->tex = givenTexture;
-	objAttr->textureLocation = givenTextureLocation;
 }
 
 void RenderObject(spaceObject* obj){
